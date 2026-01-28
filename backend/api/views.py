@@ -132,4 +132,61 @@ def get_dataset_visualization(request, pk):
             'data': [dataset.avg_flowrate, dataset.avg_pressure, dataset.avg_temperature]
         }
     }
-    return Response(response_data)
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from django.http import HttpResponse
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def generate_report(request, pk):
+    try:
+        dataset = EquipmentDataset.objects.get(pk=pk)
+    except EquipmentDataset.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+    styles = getSampleStyleSheet()
+
+    elements.append(Paragraph("Chemical Equipment Dataset Report", styles['Title']))
+    elements.append(Spacer(1, 12))
+
+    elements.append(Paragraph(f"Dataset ID: {dataset.id}", styles['Normal']))
+    elements.append(Paragraph(f"Filename: {dataset.filename}", styles['Normal']))
+    elements.append(Paragraph(f"Uploaded At: {dataset.uploaded_at.isoformat()}", styles['Normal']))
+    elements.append(Spacer(1, 12))
+
+    elements.append(Paragraph("Summary Statistics", styles['Heading2']))
+    elements.append(Paragraph(f"Total Count: {dataset.total_count}", styles['Normal']))
+    elements.append(Paragraph(f"Avg Flowrate: {dataset.avg_flowrate}", styles['Normal']))
+    elements.append(Paragraph(f"Avg Pressure: {dataset.avg_pressure}", styles['Normal']))
+    elements.append(Paragraph(f"Avg Temperature: {dataset.avg_temperature}", styles['Normal']))
+    elements.append(Spacer(1, 12))
+
+    elements.append(Paragraph("Type Distribution", styles['Heading2']))
+    data = [['Equipment Type', 'Count']]
+    for k, v in dataset.type_distribution.items():
+        data.append([k, str(v)])
+
+    t = Table(data)
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+    elements.append(t)
+
+    doc.build(elements)
+    buffer.seek(0)
+    
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="report_{dataset.id}.pdf"'
+    return response

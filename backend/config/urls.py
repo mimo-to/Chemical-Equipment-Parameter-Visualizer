@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from api.views import login, upload, history, get_dataset_detail, get_dataset_visualization
+from api.views import login, upload, history, get_dataset_detail, get_dataset_visualization, generate_report
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -25,4 +25,5 @@ urlpatterns = [
     path('api/history/', history),
     path('api/dataset/<int:pk>/', get_dataset_detail),
     path('api/dataset/<int:pk>/visualization/', get_dataset_visualization),
+    path('api/report/<int:pk>/', generate_report),
 ]
