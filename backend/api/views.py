@@ -88,3 +88,11 @@ def upload(request):
     
     serializer = EquipmentDatasetSerializer(dataset)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def history(request):
+    datasets = EquipmentDataset.objects.order_by('-uploaded_at', '-id')[:5]
+    serializer = EquipmentDatasetSerializer(datasets, many=True)
+    return Response(serializer.data)
