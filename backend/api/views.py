@@ -132,6 +132,7 @@ def get_dataset_visualization(request, pk):
             'data': [dataset.avg_flowrate, dataset.avg_pressure, dataset.avg_temperature]
         }
     }
+    return Response(response_data)
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
