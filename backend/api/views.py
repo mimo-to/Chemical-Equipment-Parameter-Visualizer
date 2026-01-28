@@ -56,4 +56,10 @@ def upload(request):
         if invalid_rows:
             return Response({'error': f'Invalid numeric value in column "{col}" at row(s): {invalid_rows}'}, status=status.HTTP_400_BAD_REQUEST)
     
+    total_count = len(df)
+    avg_flowrate = round(df['Flowrate'].mean(), 2)
+    avg_pressure = round(df['Pressure'].mean(), 2)
+    avg_temperature = round(df['Temperature'].mean(), 2)
+    type_distribution = df['Type'].value_counts().to_dict()
+    
     return Response({'message': 'File uploaded successfully'}, status=status.HTTP_201_CREATED)
