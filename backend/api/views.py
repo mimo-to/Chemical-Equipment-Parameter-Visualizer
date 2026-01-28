@@ -10,6 +10,8 @@ import io
 from .models import EquipmentDataset
 from .serializers import EquipmentDatasetSerializer
 
+from django.db import transaction
+
 @api_view(['POST'])
 def login(request):
     username = request.data.get('username')
@@ -67,15 +69,22 @@ def upload(request):
     avg_temperature = round(df['Temperature'].mean(), 2)
     type_distribution = df['Type'].value_counts().to_dict()
     
-    dataset = EquipmentDataset.objects.create(
-        filename=file.name,
-        total_count=total_count,
-        avg_flowrate=avg_flowrate,
-        avg_pressure=avg_pressure,
-        avg_temperature=avg_temperature,
-        type_distribution=type_distribution,
-        csv_data=csv_content
-    )
+    with transaction.atomic():
+        dataset = EquipmentDataset.objects.create(
+            filename=file.name,
+            total_count=total_count,
+            avg_flowrate=avg_flowrate,
+            avg_pressure=avg_pressure,
+            avg_temperature=avg_temperature,
+            type_distribution=type_distribution,
+            csv_data=csv_content
+        )
+        
+        current_count = EquipmentDataset.objects.count()
+        if current_count > 5:
+            excess = current_count - 5
+            oldest_ids = list(EquipmentDataset.objects.order_by('uploaded_at', 'id').values_list('id', flat=True)[:excess])
+            EquipmentDataset.objects.filter(id__in=oldest_ids).delete()
     
     serializer = EquipmentDatasetSerializer(dataset)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
