@@ -5,6 +5,8 @@ from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+import pandas as pd
+import io
 
 @api_view(['POST'])
 def login(request):
@@ -30,5 +32,28 @@ def upload(request):
     
     if not file.name.endswith('.csv'):
         return Response({'error': 'File must be a CSV'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        df = pd.read_csv(io.BytesIO(file.read()))
+    except Exception as e:
+        return Response({'error': f'CSV parsing failed: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if df.empty:
+        return Response({'error': 'CSV file is empty'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    required_columns = ['Equipment Name', 'Type', 'Flowrate', 'Pressure', 'Temperature']
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    
+    if missing_columns:
+        return Response({'error': f'Missing required columns: {", ".join(missing_columns)}'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    numeric_columns = ['Flowrate', 'Pressure', 'Temperature']
+    
+    for col in numeric_columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+        
+        invalid_rows = df[df[col].isna()].index.tolist()
+        if invalid_rows:
+            return Response({'error': f'Invalid numeric value in column "{col}" at row(s): {invalid_rows}'}, status=status.HTTP_400_BAD_REQUEST)
     
     return Response({'message': 'File uploaded successfully'}, status=status.HTTP_201_CREATED)
