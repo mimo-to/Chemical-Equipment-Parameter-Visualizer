@@ -96,3 +96,40 @@ def history(request):
     datasets = EquipmentDataset.objects.order_by('-uploaded_at', '-id')[:5]
     serializer = EquipmentDatasetSerializer(datasets, many=True)
     return Response(serializer.data)
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_dataset_detail(request, pk):
+    try:
+        dataset = EquipmentDataset.objects.get(pk=pk)
+    except EquipmentDataset.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    
+    serializer = EquipmentDatasetSerializer(dataset)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_dataset_visualization(request, pk):
+    try:
+        dataset = EquipmentDataset.objects.get(pk=pk)
+    except EquipmentDataset.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    
+    type_distribution_data = dataset.type_distribution
+    labels = list(type_distribution_data.keys())
+    data = list(type_distribution_data.values())
+    
+    response_data = {
+        'type_distribution': {
+            'labels': labels,
+            'data': data
+        },
+        'averages': {
+            'labels': ['Flowrate', 'Pressure', 'Temperature'],
+            'data': [dataset.avg_flowrate, dataset.avg_pressure, dataset.avg_temperature]
+        }
+    }
+    return Response(response_data)
