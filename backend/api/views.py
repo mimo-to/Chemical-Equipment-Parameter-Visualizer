@@ -7,6 +7,8 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 import pandas as pd
 import io
+from .models import EquipmentDataset
+from .serializers import EquipmentDatasetSerializer
 
 @api_view(['POST'])
 def login(request):
@@ -33,8 +35,11 @@ def upload(request):
     if not file.name.endswith('.csv'):
         return Response({'error': 'File must be a CSV'}, status=status.HTTP_400_BAD_REQUEST)
     
+    file.seek(0)
+    csv_content = file.read().decode('utf-8')
+    
     try:
-        df = pd.read_csv(io.BytesIO(file.read()))
+        df = pd.read_csv(io.StringIO(csv_content))
     except Exception as e:
         return Response({'error': f'CSV parsing failed: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -62,4 +67,15 @@ def upload(request):
     avg_temperature = round(df['Temperature'].mean(), 2)
     type_distribution = df['Type'].value_counts().to_dict()
     
-    return Response({'message': 'File uploaded successfully'}, status=status.HTTP_201_CREATED)
+    dataset = EquipmentDataset.objects.create(
+        filename=file.name,
+        total_count=total_count,
+        avg_flowrate=avg_flowrate,
+        avg_pressure=avg_pressure,
+        avg_temperature=avg_temperature,
+        type_distribution=type_distribution,
+        csv_data=csv_content
+    )
+    
+    serializer = EquipmentDatasetSerializer(dataset)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
