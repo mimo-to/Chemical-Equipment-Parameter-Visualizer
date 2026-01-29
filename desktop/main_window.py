@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QMainWindow, QAction, QLabel, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QMainWindow, QAction, QVBoxLayout, QWidget
+from upload_widget import UploadWidget
 
 class MainWindow(QMainWindow):
     def __init__(self, token):
@@ -7,10 +8,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Chemical Equipment Parameter Visualizer")
         self.setGeometry(100, 100, 1024, 768)
 
-        self.central_widget = QWidget()
-        self.layout = QVBoxLayout(self.central_widget)
-        self.placeholder_label = QLabel("Desktop Application Placeholder")
-        self.layout.addWidget(self.placeholder_label)
+        self.central_widget = UploadWidget(self.token)
         self.setCentralWidget(self.central_widget)
 
         self.create_menu_bar()
