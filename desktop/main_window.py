@@ -1,8 +1,9 @@
 from PyQt5.QtWidgets import QMainWindow, QAction, QLabel, QVBoxLayout, QWidget
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, token):
         super().__init__()
+        self.token = token
         self.setWindowTitle("Chemical Equipment Parameter Visualizer")
         self.setGeometry(100, 100, 1024, 768)
 
