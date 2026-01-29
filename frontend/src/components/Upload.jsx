@@ -33,26 +33,42 @@ const Upload = ({ onUploadSuccess }) => {
             setError(err.message || 'Upload failed');
         } finally {
             setLoading(false);
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput) fileInput.value = '';
         }
     };
 
     return (
-        <div style={{ marginTop: '20px', padding: '20px', border: '1px solid #ccc' }}>
-            <h2>Upload CSV</h2>
-            <input type="file" accept=".csv" onChange={handleFileChange} />
-            <button onClick={handleUpload} disabled={!file || loading}>
-                {loading ? 'Uploading...' : 'Upload'}
-            </button>
+        <div style={{ marginBottom: '20px' }}>
+            <h3>Upload CSV</h3>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px' }}>
+                <input id="fileInput" type="file" accept=".csv" onChange={handleFileChange} style={{ padding: '5px' }} />
+                <button
+                    onClick={handleUpload}
+                    disabled={!file || loading}
+                    style={{
+                        padding: '8px 20px',
+                        background: !file || loading ? '#ccc' : '#28a745',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: !file || loading ? 'not-allowed' : 'pointer',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    {loading ? 'Uploading...' : 'Upload'}
+                </button>
+            </div>
 
-            {error && <p style={{ color: 'red' }}>Error: {error}</p>}
+            {error && <div style={{ padding: '10px', background: '#f8d7da', color: '#721c24', borderRadius: '4px', marginBottom: '15px' }}>Error: {error}</div>}
 
             {stats && (
-                <div style={{ marginTop: '10px' }}>
-                    <h3>Upload Summary</h3>
-                    <p>Total Records: {stats.total_count}</p>
-                    <p>Avg Flowrate: {stats.avg_flowrate?.toFixed(2)}</p>
-                    <p>Avg Pressure: {stats.avg_pressure?.toFixed(2)}</p>
-                    <p>Avg Temperature: {stats.avg_temperature?.toFixed(2)}</p>
+                <div style={{ padding: '15px', background: '#d4edda', color: '#155724', borderRadius: '4px', border: '1px solid #c3e6cb' }}>
+                    <h4 style={{ margin: '0 0 10px 0' }}>Upload Summary</h4>
+                    <p style={{ margin: '5px 0' }}><strong>Total Records:</strong> {stats.total_count}</p>
+                    <p style={{ margin: '5px 0' }}><strong>Avg Flowrate:</strong> {stats.averages.avg_flowrate?.toFixed(2)}</p>
+                    <p style={{ margin: '5px 0' }}><strong>Avg Pressure:</strong> {stats.averages.avg_pressure?.toFixed(2)}</p>
+                    <p style={{ margin: '5px 0' }}><strong>Avg Temperature:</strong> {stats.averages.avg_temperature?.toFixed(2)}</p>
                 </div>
             )}
         </div>

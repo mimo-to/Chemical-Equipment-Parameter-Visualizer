@@ -46,32 +46,45 @@ const History = ({ refreshTrigger }) => {
 
     return (
         <div style={{ marginTop: '30px' }}>
-            <h3>Upload History (Last 5)</h3>
+            <h3 style={{ borderBottom: '2px solid #007bff', paddingBottom: '10px', marginBottom: '15px' }}>Upload History (Last 5)</h3>
             {history.length === 0 ? (
-                <p>No history available.</p>
+                <p style={{ color: '#666', fontStyle: 'italic' }}>No history available yet.</p>
             ) : (
-                <table border="1" style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-                    <thead>
-                        <tr>
-                            <th style={{ padding: '8px' }}>Filename</th>
-                            <th style={{ padding: '8px' }}>Uploaded At</th>
-                            <th style={{ padding: '8px' }}>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {history.map((item) => (
-                            <tr key={item.id}>
-                                <td style={{ padding: '8px' }}>{item.filename}</td>
-                                <td style={{ padding: '8px' }}>{new Date(item.uploaded_at).toLocaleString()}</td>
-                                <td style={{ padding: '8px', textAlign: 'center' }}>
-                                    <button onClick={() => handleDownload(item.id, item.filename)}>
-                                        Download PDF
-                                    </button>
-                                </td>
+                <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                        <thead>
+                            <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
+                                <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: '#495057' }}>Filename</th>
+                                <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: '#495057' }}>Uploaded At</th>
+                                <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: '#495057' }}>Actions</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {history.map((item, index) => (
+                                <tr key={item.id} style={{ borderBottom: '1px solid #dee2e6', background: index % 2 === 0 ? 'white' : '#f8f9fa' }}>
+                                    <td style={{ padding: '12px', color: '#212529' }}>{item.filename}</td>
+                                    <td style={{ padding: '12px', color: '#212529' }}>{new Date(item.uploaded_at).toLocaleString()}</td>
+                                    <td style={{ padding: '12px', textAlign: 'center' }}>
+                                        <button
+                                            onClick={() => handleDownload(item.id, item.filename)}
+                                            style={{
+                                                padding: '6px 12px',
+                                                background: '#17a2b8',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer',
+                                                fontSize: '0.9rem'
+                                            }}
+                                        >
+                                            Download PDF
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             )}
         </div>
     );

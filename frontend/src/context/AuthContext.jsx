@@ -4,15 +4,13 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(localStorage.getItem('token'));
-    const [isAuthenticated, setIsAuthenticated] = useState(!!token);
+    const isAuthenticated = !!token;
 
     useEffect(() => {
         if (token) {
             localStorage.setItem('token', token);
-            setIsAuthenticated(true);
         } else {
             localStorage.removeItem('token');
-            setIsAuthenticated(false);
         }
     }, [token]);
 

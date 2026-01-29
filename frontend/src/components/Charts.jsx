@@ -85,14 +85,18 @@ const Charts = ({ datasetId }) => {
     };
 
     return (
-        <div style={{ marginTop: '30px', display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-            <div style={{ width: '400px', height: '300px' }}>
-                <h3>Equipment Type Distribution</h3>
-                <Pie data={pieData} />
+        <div style={{ marginTop: '30px', display: 'flex', gap: '30px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <div style={{ flex: '1 1 400px', minWidth: '300px', padding: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>Equipment Type Distribution</h3>
+                <div style={{ height: '300px', position: 'relative' }}>
+                    <Pie data={pieData} options={{ maintainAspectRatio: false }} />
+                </div>
             </div>
-            <div style={{ width: '400px', height: '300px' }}>
-                <h3>Average Parameters</h3>
-                <Bar options={{ responsive: true }} data={barData} />
+            <div style={{ flex: '1 1 500px', minWidth: '300px', padding: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>Average Parameters</h3>
+                <div style={{ height: '300px', position: 'relative' }}>
+                    <Bar options={{ responsive: true, maintainAspectRatio: false }} data={barData} />
+                </div>
             </div>
         </div>
     );
