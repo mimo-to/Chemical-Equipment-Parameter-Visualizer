@@ -3,6 +3,7 @@ import requests
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QPushButton, QLabel, 
                              QFileDialog, QMessageBox)
 from PyQt5.QtCore import pyqtSignal
+from worker import Worker
 
 class UploadWidget(QWidget):
     upload_success = pyqtSignal(dict)
@@ -11,6 +12,7 @@ class UploadWidget(QWidget):
         super().__init__()
         self.token = token
         self.file_path = None
+        self.worker = None
 
         layout = QVBoxLayout()
 
@@ -26,10 +28,13 @@ class UploadWidget(QWidget):
 
         self.upload_button = QPushButton("Upload and Analyze")
         self.upload_button.setEnabled(False)
-        self.upload_button.clicked.connect(self.upload_file)
+        self.upload_button.clicked.connect(self.start_upload)
         layout.addWidget(self.upload_button)
 
         self.stats_label = QLabel("")
+        font = self.stats_label.font()
+        font.setPointSize(14)
+        self.stats_label.setFont(font)
         layout.addWidget(self.stats_label)
 
         layout.addStretch()
@@ -45,39 +50,45 @@ class UploadWidget(QWidget):
             self.upload_button.setEnabled(True)
             self.stats_label.setText("")
 
-    def upload_file(self):
+    def start_upload(self):
         if not self.file_path:
             return
 
         self.set_loading(True)
-        
-        try:
-            with open(self.file_path, 'rb') as f:
-                files = {'file': f}
-                headers = {'Authorization': f'Token {self.token}'}
-                response = requests.post(
-                    "http://127.0.0.1:8000/api/upload/",
-                    files=files,
-                    headers=headers
-                )
+        self.worker = Worker(self.upload_task)
+        self.worker.finished.connect(self.on_upload_finished)
+        self.worker.error.connect(self.on_upload_error)
+        self.worker.start()
 
-            if response.status_code == 201:
-                data = response.json()
-                self.show_stats(data)
-                self.upload_success.emit(data)
-                QMessageBox.information(self, "Success", "File uploaded successfully!")
-            else:
-                error_msg = "Upload failed"
-                try:
-                    error_msg = response.json().get('error', error_msg)
-                except ValueError:
-                    pass
-                QMessageBox.warning(self, "Error", error_msg)
+    def upload_task(self):
+        with open(self.file_path, 'rb') as f:
+            files = {'file': f}
+            headers = {'Authorization': f'Token {self.token}'}
+            response = requests.post(
+                "http://127.0.0.1:8000/api/upload/",
+                files=files,
+                headers=headers
+            )
+            return response
 
-        except requests.RequestException:
-            QMessageBox.critical(self, "Network Error", "Could not connect to server.")
-        finally:
-            self.set_loading(False)
+    def on_upload_finished(self, response):
+        self.set_loading(False)
+        if response.status_code == 201:
+            data = response.json()
+            self.show_stats(data)
+            self.upload_success.emit(data)
+            QMessageBox.information(self, "Success", "File uploaded successfully!")
+        else:
+            error_msg = "Upload failed"
+            try:
+                error_msg = response.json().get('error', error_msg)
+            except ValueError:
+                pass
+            QMessageBox.warning(self, "Error", error_msg)
+
+    def on_upload_error(self, error_msg):
+        self.set_loading(False)
+        QMessageBox.critical(self, "Network Error", f"Could not connect to server: {error_msg}")
 
     def set_loading(self, loading):
         self.select_button.setEnabled(not loading)
