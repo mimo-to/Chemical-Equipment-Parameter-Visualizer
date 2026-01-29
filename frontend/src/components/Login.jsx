@@ -10,6 +10,8 @@ const Login = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
 
+    const [showPassword, setShowPassword] = useState(false);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -38,10 +40,17 @@ const Login = () => {
                 <div>
                     <label>Password: </label>
                     <input
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                     />
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{ marginLeft: '10px' }}
+                    >
+                        {showPassword ? "Hide" : "Show"}
+                    </button>
                 </div>
                 <button type="submit">Login</button>
             </form>

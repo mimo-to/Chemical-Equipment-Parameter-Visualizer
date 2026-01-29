@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { uploadCSV } from '../services/api';
 
-const Upload = () => {
+const Upload = ({ onUploadSuccess }) => {
     const [file, setFile] = useState(null);
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState(null);
     const [error, setError] = useState('');
-    const { token } = useAuth();
+    const { token, logout } = useAuth();
 
     const handleFileChange = (e) => {
         setFile(e.target.files[0]);
@@ -22,7 +22,14 @@ const Upload = () => {
         try {
             const data = await uploadCSV(file, token);
             setStats(data);
+            if (onUploadSuccess && data.id) {
+                onUploadSuccess(data.id);
+            }
         } catch (err) {
+            if (err.message === 'Unauthorized') {
+                logout();
+                return;
+            }
             setError(err.message || 'Upload failed');
         } finally {
             setLoading(false);

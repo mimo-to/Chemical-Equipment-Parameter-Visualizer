@@ -27,7 +27,24 @@ export const uploadCSV = async (file, token) => {
     });
 
     if (!response.ok) {
+        if (response.status === 401) {
+            throw new Error('Unauthorized');
+        }
         throw new Error('Upload failed');
+    }
+
+    return await response.json();
+};
+
+export const getVisualization = async (id, token) => {
+    const response = await fetch(`${BASE_URL}/dataset/${id}/visualization/`, {
+        headers: {
+            'Authorization': `Token ${token}`
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch visualization data');
     }
 
     return await response.json();
