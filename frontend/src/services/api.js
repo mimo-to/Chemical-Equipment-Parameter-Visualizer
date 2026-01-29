@@ -13,3 +13,22 @@ export const loginUser = async (username, password) => {
     
     return await response.json();
 };
+
+export const uploadCSV = async (file, token) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${BASE_URL}/upload/`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Token ${token}`
+        },
+        body: formData
+    });
+
+    if (!response.ok) {
+        throw new Error('Upload failed');
+    }
+
+    return await response.json();
+};
