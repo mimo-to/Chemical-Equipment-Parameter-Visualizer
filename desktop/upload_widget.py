@@ -2,8 +2,11 @@ import os
 import requests
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QPushButton, QLabel, 
                              QFileDialog, QMessageBox)
+from PyQt5.QtCore import pyqtSignal
 
 class UploadWidget(QWidget):
+    upload_success = pyqtSignal(dict)
+
     def __init__(self, token):
         super().__init__()
         self.token = token
@@ -61,6 +64,7 @@ class UploadWidget(QWidget):
             if response.status_code == 201:
                 data = response.json()
                 self.show_stats(data)
+                self.upload_success.emit(data)
                 QMessageBox.information(self, "Success", "File uploaded successfully!")
             else:
                 error_msg = "Upload failed"
