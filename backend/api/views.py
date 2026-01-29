@@ -21,7 +21,11 @@ def login(request):
     
     if user:
         token, created = Token.objects.get_or_create(user=user)
-        return Response({'token': token.key})
+        return Response({
+            'token': token.key,
+            'user_id': user.id,
+            'username': user.username
+        })
     
     return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -158,7 +162,7 @@ def generate_report(request, pk):
 
     elements.append(Paragraph(f"Dataset ID: {dataset.id}", styles['Normal']))
     elements.append(Paragraph(f"Filename: {dataset.filename}", styles['Normal']))
-    elements.append(Paragraph(f"Uploaded At: {dataset.uploaded_at.isoformat()}", styles['Normal']))
+    elements.append(Paragraph(f"Uploaded At: {dataset.uploaded_at.astimezone().strftime('%Y-%m-%d %I:%M %p')}", styles['Normal']))
     elements.append(Spacer(1, 12))
 
     elements.append(Paragraph("Summary Statistics", styles['Heading2']))

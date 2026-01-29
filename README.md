@@ -48,6 +48,34 @@ A full-stack application for visualizing and analyzing chemical equipment parame
     ```
     The server will start at `http://127.0.0.1:8000`.
 
+## Creating Users
+
+The application requires authenticated users. Create a user account using Django's management command:
+
+```bash
+cd backend
+python manage.py createsuperuser
+```
+
+Follow the prompts to create a username and password. This account can be used to log in to both the web and desktop applications.
+
+**For Quick Testing (Demo Credentials):**
+```bash
+python manage.py shell
+```
+```python
+from django.contrib.auth.models import User
+User.objects.create_user(username='demo', password='demo123')
+exit()
+```
+
+## Important Configuration Notes
+
+**Backend URL:** Both the web and desktop applications are configured to connect to the backend at `http://127.0.0.1:8000`. Ensure the Django development server is running at this address before launching either frontend.
+
+**CORS Configuration:** The backend is pre-configured to accept requests from `http://localhost:5173` (Vite default) and `http://localhost:3000`. If you change frontend ports, update `CORS_ALLOWED_ORIGINS` in `backend/config/settings.py`.
+
+
 ## Web Frontend Setup
 
 1.  **Prerequisites**: Node.js 14 or higher
