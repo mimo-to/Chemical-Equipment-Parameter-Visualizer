@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Upload from './Upload';
 import Charts from './Charts';
+import History from './History';
 
 const Dashboard = () => {
     const [datasetId, setDatasetId] = useState(null);
@@ -11,6 +12,7 @@ const Dashboard = () => {
             <p>Welcome to the protected dashboard.</p>
             <Upload onUploadSuccess={setDatasetId} />
             <Charts datasetId={datasetId} />
+            <History refreshTrigger={datasetId} />
         </div>
     );
 };

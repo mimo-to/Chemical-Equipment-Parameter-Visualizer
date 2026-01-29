@@ -49,3 +49,31 @@ export const getVisualization = async (id, token) => {
 
     return await response.json();
 };
+
+export const getHistory = async (token) => {
+    const response = await fetch(`${BASE_URL}/history/`, {
+        headers: {
+            'Authorization': `Token ${token}`
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch history');
+    }
+
+    return await response.json();
+};
+
+export const downloadReport = async (id, token) => {
+    const response = await fetch(`${BASE_URL}/report/${id}/`, {
+        headers: {
+            'Authorization': `Token ${token}`
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to download report');
+    }
+
+    return await response.blob();
+};
