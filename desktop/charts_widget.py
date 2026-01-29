@@ -8,12 +8,10 @@ class ChartsWidget(QWidget):
         super().__init__()
         layout = QHBoxLayout()
 
-        # Type Distribution Chart (Left)
         self.figure1 = Figure(figsize=(5, 4), dpi=100)
         self.canvas1 = FigureCanvas(self.figure1)
         layout.addWidget(self.canvas1)
 
-        # Averages Chart (Right)
         self.figure2 = Figure(figsize=(5, 4), dpi=100)
         self.canvas2 = FigureCanvas(self.figure2)
         layout.addWidget(self.canvas2)
@@ -21,7 +19,6 @@ class ChartsWidget(QWidget):
         self.setLayout(layout)
 
     def update_charts(self, data):
-        # 1. Type Distribution Chart
         self.figure1.clear()
         ax1 = self.figure1.add_subplot(111)
         
@@ -36,7 +33,6 @@ class ChartsWidget(QWidget):
 
         self.canvas1.draw()
 
-        # 2. Averages Chart
         self.figure2.clear()
         ax2 = self.figure2.add_subplot(111)
 
