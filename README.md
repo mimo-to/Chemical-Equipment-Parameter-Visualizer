@@ -12,7 +12,7 @@ A full-stack application for visualizing and analyzing chemical equipment parame
 ## Repository Structure
 
 *   `backend/` - Django project and API source code
-*   `frontend/` - React Web Application source code
+*   `web/` - React Web Application source code
 *   `desktop/` - PyQt5 Desktop Application source code
 *   `sample_equipment_data.csv` - Sample dataset for testing application features
 
@@ -79,9 +79,9 @@ exit()
 ## Web Frontend Setup
 
 1.  **Prerequisites**: Node.js 14 or higher
-2.  **Navigate to the frontend directory**:
+2.  **Navigate to the web directory**:
     ```bash
-    cd frontend
+    cd web
     ```
 3.  **Install dependencies**:
     ```bash

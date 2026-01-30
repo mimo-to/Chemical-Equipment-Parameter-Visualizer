@@ -66,9 +66,9 @@ const Upload = ({ onUploadSuccess }) => {
                 <div style={{ padding: '15px', background: '#d4edda', color: '#155724', borderRadius: '4px', border: '1px solid #c3e6cb' }}>
                     <h4 style={{ margin: '0 0 10px 0' }}>Upload Summary</h4>
                     <p style={{ margin: '5px 0' }}><strong>Total Records:</strong> {stats.total_count}</p>
-                    <p style={{ margin: '5px 0' }}><strong>Avg Flowrate:</strong> {stats.averages.avg_flowrate?.toFixed(2)}</p>
-                    <p style={{ margin: '5px 0' }}><strong>Avg Pressure:</strong> {stats.averages.avg_pressure?.toFixed(2)}</p>
-                    <p style={{ margin: '5px 0' }}><strong>Avg Temperature:</strong> {stats.averages.avg_temperature?.toFixed(2)}</p>
+                    <p style={{ margin: '5px 0' }}><strong>Avg Flowrate:</strong> {Number(stats.avg_flowrate).toFixed(2)}</p>
+                    <p style={{ margin: '5px 0' }}><strong>Avg Pressure:</strong> {Number(stats.avg_pressure).toFixed(2)}</p>
+                    <p style={{ margin: '5px 0' }}><strong>Avg Temperature:</strong> {Number(stats.avg_temperature).toFixed(2)}</p>
                 </div>
             )}
         </div>
