@@ -12,6 +12,13 @@ from .models import EquipmentDataset
 from .serializers import EquipmentDatasetSerializer
 
 from django.db import transaction
+from django.core.exceptions import ValidationError
+from .validators import (
+    validate_file_size, 
+    validate_file_extension, 
+    validate_csv_structure, 
+    validate_csv_content
+)
 
 logger = logging.getLogger(__name__)
 
@@ -49,42 +56,38 @@ def upload(request):
         
         file = request.FILES['file']
         
-        if not file.name.endswith('.csv'):
-            return Response({'error': 'File must be a CSV'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        file.seek(0)
         try:
+            validate_file_extension(file)
+        except ValidationError as e:
+            return Response({'error': str(e.message)}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            validate_file_size(file)
+        except ValidationError as e:
+            return Response({'error': str(e.message)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            file.seek(0)
             csv_content = file.read().decode('utf-8')
         except UnicodeDecodeError:
             return Response({'error': 'File encoding must be UTF-8'}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
             df = pd.read_csv(io.StringIO(csv_content))
-        except Exception as e:
-            return Response({'error': f'CSV parsing failed: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response({'error': 'Failed to parse CSV file'}, status=status.HTTP_400_BAD_REQUEST)
         
-        if df.empty:
-            return Response({'error': 'CSV file is empty'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            validate_csv_structure(df)
+        except ValidationError as e:
+            return Response({'error': str(e.message)}, status=status.HTTP_400_BAD_REQUEST)
         
-        required_columns = ['Equipment Name', 'Type', 'Flowrate', 'Pressure', 'Temperature']
-        missing_columns = [col for col in required_columns if col not in df.columns]
+        try:
+            validate_csv_content(df)
+        except ValidationError as e:
+            return Response({'error': str(e.message)}, status=status.HTTP_400_BAD_REQUEST)
         
-        if missing_columns:
-            return Response({'error': f'Missing required columns: {", ".join(missing_columns)}'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        numeric_columns = ['Flowrate', 'Pressure', 'Temperature']
-        
-        for col in numeric_columns:
-            df[col] = pd.to_numeric(df[col], errors='coerce')
-            
-            invalid_rows = df[df[col].isna()].index.tolist()
-            if invalid_rows:
-                friendly_rows = [r + 2 for r in invalid_rows[:10]] 
-                msg = f'Invalid numeric value in column "{col}" at row(s): {friendly_rows}'
-                if len(invalid_rows) > 10:
-                    msg += '...'
-                return Response({'error': msg}, status=status.HTTP_400_BAD_REQUEST)
-        
+        # Processing (Phase A logic remains)
         total_count = len(df)
         avg_flowrate = round(df['Flowrate'].mean(), 2)
         avg_pressure = round(df['Pressure'].mean(), 2)
@@ -102,6 +105,7 @@ def upload(request):
                 csv_data=csv_content
             )
             
+            # Retention Policy (Keep last 5)
             current_count = EquipmentDataset.objects.count()
             if current_count > 5:
                 excess = current_count - 5
@@ -113,6 +117,7 @@ def upload(request):
         
     except Exception as e:
         logger.error(f"Upload error: {str(e)}")
+        # Strict error format: No stack traces
         return Response({'error': 'An unexpected error occurred during upload processing'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])

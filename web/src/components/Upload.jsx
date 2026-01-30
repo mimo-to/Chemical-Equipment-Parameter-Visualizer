@@ -15,10 +15,25 @@ const Upload = ({ onUploadSuccess }) => {
         setStats(null);
     };
 
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
     const handleUpload = async () => {
         if (!file) return;
-        setLoading(true);
+
         setError('');
+        setStats(null);
+
+        if (!file.name.toLowerCase().endsWith('.csv')) {
+            setError('Invalid file type. Only .csv files are allowed.');
+            return;
+        }
+
+        if (file.size > MAX_FILE_SIZE) {
+            setError(`File too large. Max size is ${MAX_FILE_SIZE / (1024 * 1024)}MB.`);
+            return;
+        }
+
+        setLoading(true);
         try {
             const data = await uploadCSV(file, token);
             setStats(data);

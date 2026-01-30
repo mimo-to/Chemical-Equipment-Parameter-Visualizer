@@ -50,8 +50,23 @@ class UploadWidget(QWidget):
             self.upload_button.setEnabled(True)
             self.stats_label.setText("")
 
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
     def start_upload(self):
         if not self.file_path:
+            return
+
+        if not self.file_path.lower().endswith('.csv'):
+            QMessageBox.warning(self, "Invalid File", "Only .csv files are allowed.")
+            return
+
+        try:
+            size = os.path.getsize(self.file_path)
+            if size > self.MAX_FILE_SIZE:
+                QMessageBox.warning(self, "File Too Large", f"File size exceeds {self.MAX_FILE_SIZE / (1024 * 1024)}MB limit.")
+                return
+        except OSError:
+            QMessageBox.warning(self, "Error", "Could not read file size.")
             return
 
         self.set_loading(True)
@@ -93,7 +108,8 @@ class UploadWidget(QWidget):
             if response.status_code == 413:
                 error_msg = "File too large (Max 10MB)"
             elif response.status_code == 500:
-                error_msg = "Internal server error. Please try again later."
+                if error_msg == "Upload failed":
+                     error_msg = "Internal server error. Please try again later."
                 
             QMessageBox.warning(self, "Error", error_msg)
 
