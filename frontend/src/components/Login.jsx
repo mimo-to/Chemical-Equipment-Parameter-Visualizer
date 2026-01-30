@@ -24,7 +24,7 @@ const Login = () => {
         try {
             const data = await loginUser(username, password);
             login(data.token);
-            // Navigation handled by useEffect
+
         } catch (err) {
             setError('Invalid credentials');
         }

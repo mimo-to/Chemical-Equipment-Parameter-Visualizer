@@ -35,7 +35,6 @@ class MainWindow(QMainWindow):
 
     def setup_history_tab(self):
         self.history_widget = HistoryWidget(self.token)
-        # Connect upload success to history refresh
         self.upload_widget.upload_success.connect(self.history_widget.fetch_history)
         self.tabs.addTab(self.history_widget, "History")
 

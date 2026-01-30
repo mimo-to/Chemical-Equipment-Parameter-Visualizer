@@ -12,7 +12,7 @@ const Dashboard = () => {
 
     const handleUploadSuccess = (id) => {
         setDatasetId(id);
-        setActiveTab('charts'); // Auto-switch to charts
+        setActiveTab('charts');
     };
 
     return (

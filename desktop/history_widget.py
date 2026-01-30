@@ -91,7 +91,6 @@ class HistoryWidget(QWidget):
             formatted_date = raw_date_str
             
             try:
-                # Parse standard Django ISO format: 2026-01-29T20:35:22.998825Z
                 if 'Z' in raw_date_str:
                     clean_date = raw_date_str.replace('Z', '')
                     dt_utc = datetime.strptime(clean_date, "%Y-%m-%dT%H:%M:%S.%f")
