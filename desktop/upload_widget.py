@@ -2,7 +2,7 @@ import os
 import requests
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QPushButton, QLabel, 
                              QFileDialog, QMessageBox)
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, Qt
 from worker import Worker
 
 class UploadWidget(QWidget):
@@ -67,23 +67,34 @@ class UploadWidget(QWidget):
             response = requests.post(
                 "http://127.0.0.1:8000/api/upload/",
                 files=files,
-                headers=headers
+                headers=headers,
+                timeout=30 
             )
             return response
 
     def on_upload_finished(self, response):
         self.set_loading(False)
         if response.status_code == 201:
-            data = response.json()
-            self.show_stats(data)
-            self.upload_success.emit(data)
-            QMessageBox.information(self, "Success", "File uploaded successfully!")
+            try:
+                data = response.json()
+                self.show_stats(data)
+                self.upload_success.emit(data)
+                QMessageBox.information(self, "Success", "File uploaded successfully!")
+            except ValueError:
+                 QMessageBox.warning(self, "Error", "Invalid server response (not JSON).")
         else:
             error_msg = "Upload failed"
             try:
-                error_msg = response.json().get('error', error_msg)
+                data = response.json()
+                error_msg = data.get('error', error_msg)
             except ValueError:
                 pass
+            
+            if response.status_code == 413:
+                error_msg = "File too large (Max 10MB)"
+            elif response.status_code == 500:
+                error_msg = "Internal server error. Please try again later."
+                
             QMessageBox.warning(self, "Error", error_msg)
 
     def on_upload_error(self, error_msg):
@@ -94,6 +105,11 @@ class UploadWidget(QWidget):
         self.select_button.setEnabled(not loading)
         self.upload_button.setEnabled(not loading)
         self.upload_button.setText("Uploading..." if loading else "Upload and Analyze")
+
+        if loading:
+            self.setCursor(Qt.WaitCursor)
+        else:
+            self.unsetCursor()
 
     def show_stats(self, data):
         stats = (

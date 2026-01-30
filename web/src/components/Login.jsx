@@ -7,6 +7,7 @@ const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const { login, isAuthenticated } = useAuth();
     const navigate = useNavigate();
 
@@ -21,12 +22,15 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setLoading(true);
         try {
             const data = await loginUser(username, password);
             login(data.token);
 
         } catch (err) {
-            setError('Invalid credentials');
+            setError(err.message || 'Invalid credentials');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -44,6 +48,7 @@ const Login = () => {
                             onChange={(e) => setUsername(e.target.value)}
                             style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '1rem' }}
                             required
+                            disabled={loading}
                         />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', position: 'relative' }}>
@@ -54,10 +59,12 @@ const Login = () => {
                             onChange={(e) => setPassword(e.target.value)}
                             style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '1rem', width: '100%', boxSizing: 'border-box' }}
                             required
+                            disabled={loading}
                         />
                         <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
+                            disabled={loading}
                             style={{
                                 position: 'absolute',
                                 right: '10px',
@@ -74,9 +81,20 @@ const Login = () => {
                     </div>
                     <button
                         type="submit"
-                        style={{ padding: '12px', background: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold' }}
+                        disabled={loading}
+                        style={{
+                            padding: '12px',
+                            background: loading ? '#6c757d' : '#007bff',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            fontSize: '1rem',
+                            fontWeight: 'bold',
+                            opacity: loading ? 0.7 : 1
+                        }}
                     >
-                        Login
+                        {loading ? 'Signing In...' : 'Login'}
                     </button>
                 </form>
             </div>

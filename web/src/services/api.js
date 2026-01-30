@@ -7,11 +7,13 @@ export const loginUser = async (username, password) => {
         body: JSON.stringify({ username, password })
     });
     
+    const data = await response.json();
+    
     if (!response.ok) {
-        throw new Error('Login failed');
+        throw new Error(data.error || 'Login failed');
     }
     
-    return await response.json();
+    return data;
 };
 
 export const uploadCSV = async (file, token) => {
@@ -26,14 +28,16 @@ export const uploadCSV = async (file, token) => {
         body: formData
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
         if (response.status === 401) {
             throw new Error('Unauthorized');
         }
-        throw new Error('Upload failed');
+        throw new Error(data.error || 'Upload failed');
     }
 
-    return await response.json();
+    return data;
 };
 
 export const getVisualization = async (id, token) => {

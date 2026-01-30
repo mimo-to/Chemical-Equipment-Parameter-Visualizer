@@ -23,6 +23,9 @@ ChartJS.register(
     ArcElement
 );
 
+ChartJS.defaults.color = '#f8fafc';
+ChartJS.defaults.borderColor = '#334155';
+
 const Charts = ({ datasetId }) => {
     const [chartData, setChartData] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -50,7 +53,7 @@ const Charts = ({ datasetId }) => {
 
     if (!datasetId) return null;
     if (loading) return <p>Loading charts...</p>;
-    if (error) return <p style={{ color: 'red' }}>{error}</p>;
+    if (error) return <p className="alert alert-error">{error}</p>;
     if (!chartData) return null;
 
     const { type_distribution, averages } = chartData;
@@ -62,13 +65,18 @@ const Charts = ({ datasetId }) => {
                 label: 'Equipment Count',
                 data: type_distribution.data,
                 backgroundColor: [
-                    'rgba(255, 99, 132, 0.6)',
-                    'rgba(54, 162, 235, 0.6)',
-                    'rgba(255, 206, 86, 0.6)',
-                    'rgba(75, 192, 192, 0.6)',
-                    'rgba(153, 102, 255, 0.6)',
+                    '#3b82f6',
+                    '#10b981',
+                    '#f59e0b',
+                    '#ef4444',
+                    '#8b5cf6',
+                    '#ec4899',
+                    '#06b6d4',
+                    '#f97316',
+                    '#6366f1',
+                    '#14b8a6',
                 ],
-                borderWidth: 1,
+                borderWidth: 0,
             },
         ],
     };
@@ -79,23 +87,37 @@ const Charts = ({ datasetId }) => {
             {
                 label: 'Average Values',
                 data: averages.data,
-                backgroundColor: 'rgba(53, 162, 235, 0.5)',
+                backgroundColor: [
+                    '#3b82f6',
+                    '#f59e0b',
+                    '#ef4444',
+                ],
+                borderRadius: 4,
             },
         ],
     };
 
+    const options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom' },
+            title: { display: false },
+        },
+    };
+
     return (
         <div style={{ marginTop: '30px', display: 'flex', gap: '30px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <div style={{ flex: '1 1 400px', minWidth: '300px', padding: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>Equipment Type Distribution</h3>
+            <div className="chart-container">
+                <h3 style={{ textAlign: 'center', marginBottom: '20px', color: '#f8fafc' }}>Equipment Type Distribution</h3>
                 <div style={{ height: '300px', position: 'relative' }}>
-                    <Pie data={pieData} options={{ maintainAspectRatio: false }} />
+                    <Pie data={pieData} options={options} />
                 </div>
             </div>
-            <div style={{ flex: '1 1 500px', minWidth: '300px', padding: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>Average Parameters</h3>
+            <div className="chart-container">
+                <h3 style={{ textAlign: 'center', marginBottom: '20px', color: '#f8fafc' }}>Average Parameters</h3>
                 <div style={{ height: '300px', position: 'relative' }}>
-                    <Bar options={{ responsive: true, maintainAspectRatio: false }} data={barData} />
+                    <Bar data={barData} options={options} />
                 </div>
             </div>
         </div>

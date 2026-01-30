@@ -5,7 +5,9 @@ import { getHistory, downloadReport } from '../services/api';
 const History = ({ refreshTrigger }) => {
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [downloadingId, setDownloadingId] = useState(null);
     const [error, setError] = useState('');
+    const [downloadError, setDownloadError] = useState('');
     const { token } = useAuth();
 
     useEffect(() => {
@@ -26,6 +28,8 @@ const History = ({ refreshTrigger }) => {
     }, [token, refreshTrigger]);
 
     const handleDownload = async (id, filename) => {
+        setDownloadingId(id);
+        setDownloadError('');
         try {
             const blob = await downloadReport(id, token);
             const url = window.URL.createObjectURL(blob);
@@ -37,7 +41,10 @@ const History = ({ refreshTrigger }) => {
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
         } catch (err) {
-            alert('Failed to download report');
+            setDownloadError(`Failed to download report for ${filename}`);
+            setTimeout(() => setDownloadError(''), 5000);
+        } finally {
+            setDownloadingId(null);
         }
     };
 
@@ -47,37 +54,38 @@ const History = ({ refreshTrigger }) => {
     return (
         <div style={{ marginTop: '30px' }}>
             <h3 style={{ borderBottom: '2px solid #007bff', paddingBottom: '10px', marginBottom: '15px' }}>Upload History (Last 5)</h3>
+
+            {downloadError && (
+                <div style={{ background: '#f8d7da', color: '#721c24', padding: '10px', marginBottom: '10px', borderRadius: '4px' }}>
+                    {downloadError}
+                </div>
+            )}
+
             {history.length === 0 ? (
-                <p style={{ color: '#666', fontStyle: 'italic' }}>No history available yet.</p>
+                <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No history available yet.</p>
             ) : (
-                <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                <div className="table-container">
+                    <table className="table">
                         <thead>
-                            <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
-                                <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: '#495057' }}>Filename</th>
-                                <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: '#495057' }}>Uploaded At</th>
-                                <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: '#495057' }}>Actions</th>
+                            <tr>
+                                <th>Filename</th>
+                                <th>Uploaded At</th>
+                                <th style={{ textAlign: 'center' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {history.map((item, index) => (
-                                <tr key={item.id} style={{ borderBottom: '1px solid #dee2e6', background: index % 2 === 0 ? 'white' : '#f8f9fa' }}>
-                                    <td style={{ padding: '12px', color: '#212529' }}>{item.filename}</td>
-                                    <td style={{ padding: '12px', color: '#212529' }}>{new Date(item.uploaded_at).toLocaleString()}</td>
-                                    <td style={{ padding: '12px', textAlign: 'center' }}>
+                            {history.map((item) => (
+                                <tr key={item.id}>
+                                    <td>{item.filename}</td>
+                                    <td>{new Date(item.uploaded_at).toLocaleString()}</td>
+                                    <td style={{ textAlign: 'center' }}>
                                         <button
                                             onClick={() => handleDownload(item.id, item.filename)}
-                                            style={{
-                                                padding: '6px 12px',
-                                                background: '#17a2b8',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '4px',
-                                                cursor: 'pointer',
-                                                fontSize: '0.9rem'
-                                            }}
+                                            disabled={downloadingId === item.id}
+                                            className="btn-primary"
+                                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem' }}
                                         >
-                                            Download PDF
+                                            {downloadingId === item.id ? 'Downloading...' : 'Download PDF'}
                                         </button>
                                     </td>
                                 </tr>

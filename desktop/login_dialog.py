@@ -1,6 +1,7 @@
 import requests
 from PyQt5.QtWidgets import QDialog, QLineEdit, QPushButton, QVBoxLayout, QLabel, QMessageBox
 from PyQt5.QtCore import Qt
+from worker import Worker
 
 class LoginDialog(QDialog):
     def __init__(self):
@@ -8,6 +9,8 @@ class LoginDialog(QDialog):
         self.setWindowTitle("Login")
         self.setFixedWidth(360)
         self.setStyleSheet("background-color: white;")  
+        self.token = None
+        self.worker = None
         
         layout = QVBoxLayout()
         layout.setSpacing(20)
@@ -42,6 +45,10 @@ class LoginDialog(QDialog):
             QLineEdit:focus {
                 border: 1px solid #333;
                 background-color: #fff;
+            }
+            QLineEdit:disabled {
+                background-color: #eee;
+                color: #888;
             }
         """
 
@@ -80,8 +87,11 @@ class LoginDialog(QDialog):
             QPushButton:pressed {
                 background-color: #000000;
             }
+            QPushButton:disabled {
+                background-color: #888;
+            }
         """)
-        self.login_button.clicked.connect(self.handle_login)
+        self.login_button.clicked.connect(self.start_login)
         layout.addWidget(self.login_button)
 
         self.cancel_button = QPushButton("Cancel")
@@ -96,6 +106,9 @@ class LoginDialog(QDialog):
             QPushButton:hover {
                 color: #333333;
             }
+            QPushButton:disabled {
+                color: #aaa;
+            }
         """)
         self.cancel_button.clicked.connect(self.reject)
         layout.addWidget(self.cancel_button)
@@ -103,7 +116,14 @@ class LoginDialog(QDialog):
         layout.addStretch()
         self.setLayout(layout)
 
-    def handle_login(self):
+    def set_loading(self, loading):
+        self.username_input.setEnabled(not loading)
+        self.password_input.setEnabled(not loading)
+        self.login_button.setEnabled(not loading)
+        self.cancel_button.setEnabled(not loading)
+        self.login_button.setText("Signing In..." if loading else "Sign In")
+
+    def start_login(self):
         username = self.username_input.text()
         password = self.password_input.text()
 
@@ -111,16 +131,32 @@ class LoginDialog(QDialog):
             QMessageBox.warning(self, "Error", "Please enter both username and password.")
             return
 
-        try:
-            response = requests.post(
-                "http://127.0.0.1:8000/api/login/",
-                json={"username": username, "password": password}
-            )
+        self.set_loading(True)
+        self.worker = Worker(lambda: self.login_task(username, password))
+        self.worker.finished.connect(self.on_login_finished)
+        self.worker.error.connect(self.on_login_error)
+        self.worker.start()
 
-            if response.status_code == 200:
+    def login_task(self, username, password):
+        return requests.post(
+            "http://127.0.0.1:8000/api/login/",
+            json={"username": username, "password": password},
+            timeout=10
+        )
+
+    def on_login_finished(self, response):
+        self.set_loading(False)
+        if response.status_code == 200:
+            try:
                 self.token = response.json().get("token")
                 self.accept()
-            else:
-                QMessageBox.warning(self, "Login Failed", "Invalid credentials.")
-        except requests.RequestException:
-            QMessageBox.critical(self, "Network Error", "Could not connect to server.")
+            except ValueError:
+                QMessageBox.critical(self, "Error", "Invalid server response.")
+        elif response.status_code == 401:
+            QMessageBox.warning(self, "Login Failed", "Invalid credentials.")
+        else:
+            QMessageBox.warning(self, "Login Failed", f"Server error: {response.status_code}")
+
+    def on_login_error(self, error_msg):
+        self.set_loading(False)
+        QMessageBox.critical(self, "Network Error", f"Could not connect to server: {error_msg}")
