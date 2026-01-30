@@ -21,14 +21,16 @@ const Login = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
         setLoading(true);
+        setError('');
+        console.log(`[Login] Attempting login for user: ${username}`);
         try {
             const data = await loginUser(username, password);
             login(data.token);
-
+            console.log('[Login] Success');
         } catch (err) {
-            setError(err.message || 'Invalid credentials');
+            console.error('[Login] Failed:', err.message);
+            setError(err.message);
         } finally {
             setLoading(false);
         }

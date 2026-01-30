@@ -24,26 +24,27 @@ logger = logging.getLogger(__name__)
 
 @api_view(['POST'])
 def login(request):
+    username = request.data.get('username')
     try:
-        username = request.data.get('username')
-        password = request.data.get('password')
-        
-        if not username or not password:
+        if not username or not request.data.get('password'):
+            logger.warning(f"Login failed: Missing credentials for username '{username}'")
             return Response({'error': 'Username and password are required'}, status=status.HTTP_400_BAD_REQUEST)
         
-        user = authenticate(username=username, password=password)
+        user = authenticate(username=username, password=request.data.get('password'))
         
         if user:
-            token, created = Token.objects.get_or_create(user=user)
+            token, _ = Token.objects.get_or_create(user=user)
+            logger.info(f"Login successful: User '{username}'")
             return Response({
                 'token': token.key,
                 'user_id': user.id,
                 'username': user.username
             })
         
+        logger.warning(f"Login failed: Invalid credentials for username '{username}'")
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
     except Exception as e:
-        logger.error(f"Login error: {str(e)}")
+        logger.error(f"Login error for '{username}': {str(e)}", exc_info=True)
         return Response({'error': 'An unexpected error occurred during login'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
@@ -51,43 +52,57 @@ def login(request):
 @permission_classes([IsAuthenticated])
 def upload(request):
     try:
+        user = request.user.username
         if 'file' not in request.FILES:
+            logger.error(f"Upload failed: No file provided by user '{user}'")
             return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
         
         file = request.FILES['file']
+        logger.info(f"Upload started: User '{user}', File '{file.name}', Size {file.size} bytes")
         
         try:
             validate_file_extension(file)
         except ValidationError as e:
+            logger.warning(f"Upload validation failed (Extension): {str(e.message)}")
             return Response({'error': str(e.message)}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             validate_file_size(file)
         except ValidationError as e:
+            logger.warning(f"Upload validation failed (Size): {str(e.message)}")
             return Response({'error': str(e.message)}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
             file.seek(0)
             csv_content = file.read().decode('utf-8')
         except UnicodeDecodeError:
+            logger.error(f"Upload failed: Encoding error for file '{file.name}'")
             return Response({'error': 'File encoding must be UTF-8'}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
             df = pd.read_csv(io.StringIO(csv_content))
         except Exception:
+            logger.error(f"Upload failed: CSV parse error for file '{file.name}'")
             return Response({'error': 'Failed to parse CSV file'}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
             validate_csv_structure(df)
         except ValidationError as e:
+            logger.warning(f"Upload validation failed (Structure): {str(e.message)}")
             return Response({'error': str(e.message)}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
             validate_csv_content(df)
         except ValidationError as e:
+            logger.warning(f"Upload validation failed (Content): {str(e.message)}")
             return Response({'error': str(e.message)}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Processing (Phase A logic remains)
+        try:
+            validate_csv_content(df)
+        except ValidationError as e:
+            logger.warning(f"Upload validation failed (Content): {str(e.message)}")
+            return Response({'error': str(e.message)}, status=status.HTTP_400_BAD_REQUEST)
+        
         total_count = len(df)
         avg_flowrate = round(df['Flowrate'].mean(), 2)
         avg_pressure = round(df['Pressure'].mean(), 2)
@@ -104,20 +119,20 @@ def upload(request):
                 type_distribution=type_distribution,
                 csv_data=csv_content
             )
+            logger.info(f"Dataset created: ID {dataset.id}, Rows {total_count}")
             
-            # Retention Policy (Keep last 5)
             current_count = EquipmentDataset.objects.count()
             if current_count > 5:
                 excess = current_count - 5
                 oldest_ids = list(EquipmentDataset.objects.order_by('uploaded_at', 'id').values_list('id', flat=True)[:excess])
                 EquipmentDataset.objects.filter(id__in=oldest_ids).delete()
+                logger.info(f"Retention policy triggered: Deleted {len(oldest_ids)} old datasets")
         
         serializer = EquipmentDatasetSerializer(dataset)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
         
     except Exception as e:
-        logger.error(f"Upload error: {str(e)}")
-        # Strict error format: No stack traces
+        logger.error(f"Unexpected upload error: {str(e)}", exc_info=True)
         return Response({'error': 'An unexpected error occurred during upload processing'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
@@ -126,10 +141,11 @@ def upload(request):
 def history(request):
     try:
         datasets = EquipmentDataset.objects.order_by('-uploaded_at', '-id')[:5]
+        logger.info(f"History accessed by user '{request.user.username}'")
         serializer = EquipmentDatasetSerializer(datasets, many=True)
         return Response(serializer.data)
     except Exception as e:
-        logger.error(f"History fetch error: {str(e)}")
+        logger.error(f"History fetch error: {str(e)}", exc_info=True)
         return Response({'error': 'Failed to retrieve history'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
@@ -146,6 +162,8 @@ def get_dataset_detail(request, pk):
         logger.error(f"Dataset detail error: {str(e)}")
         return Response({'error': 'Failed to retrieve dataset details'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+from reportlab.pdfgen import canvas
+from datetime import datetime
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])

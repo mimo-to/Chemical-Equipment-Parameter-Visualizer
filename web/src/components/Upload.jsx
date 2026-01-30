@@ -15,7 +15,7 @@ const Upload = ({ onUploadSuccess }) => {
         setStats(null);
     };
 
-    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
     const handleUpload = async () => {
         if (!file) return;
@@ -24,23 +24,30 @@ const Upload = ({ onUploadSuccess }) => {
         setStats(null);
 
         if (!file.name.toLowerCase().endsWith('.csv')) {
-            setError('Invalid file type. Only .csv files are allowed.');
+            const msg = 'Invalid file type. Only .csv files are allowed.';
+            console.warn(`[Upload] Pre-validation failed: ${msg}`);
+            setError(msg);
             return;
         }
 
         if (file.size > MAX_FILE_SIZE) {
-            setError(`File too large. Max size is ${MAX_FILE_SIZE / (1024 * 1024)}MB.`);
+            const msg = `File too large. Max size is ${MAX_FILE_SIZE / (1024 * 1024)}MB.`;
+            console.warn(`[Upload] Pre-validation failed: ${msg}`);
+            setError(msg);
             return;
         }
 
+        console.log(`[Upload] Starting upload: ${file.name} (${file.size} bytes)`);
         setLoading(true);
         try {
             const data = await uploadCSV(file, token);
+            console.log('[Upload] Success, Stats received');
             setStats(data);
             if (onUploadSuccess && data.id) {
                 onUploadSuccess(data.id);
             }
         } catch (err) {
+            console.error('[Upload] Failed:', err.message);
             if (err.message === 'Unauthorized') {
                 logout();
                 return;

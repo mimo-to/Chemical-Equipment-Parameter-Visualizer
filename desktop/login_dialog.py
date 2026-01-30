@@ -1,5 +1,5 @@
 import requests
-from PyQt5.QtWidgets import QDialog, QLineEdit, QPushButton, QVBoxLayout, QLabel, QMessageBox
+from PyQt5.QtWidgets import QDialog, QLineEdit, QPushButton, QVBoxLayout, QLabel, QMessageBox, QCheckBox
 from PyQt5.QtCore import Qt
 from worker import Worker
 
@@ -64,6 +64,12 @@ class LoginDialog(QDialog):
         self.password_input.setFixedHeight(40)
         self.password_input.setStyleSheet(input_style)
         layout.addWidget(self.password_input)
+
+        self.show_password_cb = QCheckBox("Show Password")
+        self.show_password_cb.setCursor(Qt.PointingHandCursor)
+        self.show_password_cb.setStyleSheet("color: #666666; font-size: 12px;")
+        self.show_password_cb.stateChanged.connect(self.toggle_password_visibility)
+        layout.addWidget(self.show_password_cb)
 
         layout.addSpacing(10)
 
@@ -160,3 +166,9 @@ class LoginDialog(QDialog):
     def on_login_error(self, error_msg):
         self.set_loading(False)
         QMessageBox.critical(self, "Network Error", f"Could not connect to server: {error_msg}")
+
+    def toggle_password_visibility(self, state):
+        if state == Qt.Checked:
+            self.password_input.setEchoMode(QLineEdit.Normal)
+        else:
+            self.password_input.setEchoMode(QLineEdit.Password)

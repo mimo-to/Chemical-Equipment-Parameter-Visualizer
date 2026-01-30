@@ -40,9 +40,10 @@ const Charts = ({ datasetId }) => {
             try {
                 const data = await getVisualization(datasetId, token);
                 setChartData(data);
-                setError('');
+                console.log(`[Visualization] Loaded data for Dataset ID ${datasetId}`);
             } catch (err) {
-                setError('Failed to load charts');
+                console.error('[Visualization] Failed to load data:', err.message);
+                setError('Failed to load chart data');
             } finally {
                 setLoading(false);
             }
