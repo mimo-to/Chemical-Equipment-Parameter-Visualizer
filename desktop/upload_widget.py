@@ -3,7 +3,6 @@ from PyQt5.QtWidgets import (
     QFileDialog, QGroupBox, QFrame
 )
 from PyQt5.QtCore import pyqtSignal, Qt
-
 from theme import UPLOAD_THEME
 from worker import UploadWorker
 
@@ -19,19 +18,19 @@ class UploadWidget(QWidget):
         self.setStyleSheet(UPLOAD_THEME)
         
         layout = QVBoxLayout()
-        layout.setContentsMargins(30, 30, 30, 30)
-        layout.setSpacing(20)
+        layout.setContentsMargins(36, 36, 36, 36)
+        layout.setSpacing(24)
         
-        title = QLabel("Data Acquisition")
+        title = QLabel("DATA ACQUISITION")
         title.setObjectName("title")
         layout.addWidget(title)
         
         file_row = QHBoxLayout()
         file_row.setSpacing(16)
         
-        self.browse_btn = QPushButton("Select File")
+        self.browse_btn = QPushButton("SELECT FILE")
         self.browse_btn.setObjectName("browse")
-        self.browse_btn.setFixedWidth(140)
+        self.browse_btn.setFixedWidth(160)
         self.browse_btn.clicked.connect(self.browse_file)
         file_row.addWidget(self.browse_btn)
         
@@ -39,8 +38,8 @@ class UploadWidget(QWidget):
         self.file_label.setObjectName("filename")
         file_row.addWidget(self.file_label, 1)
         
-        self.upload_btn = QPushButton("Analyze")
-        self.upload_btn.setFixedWidth(140)
+        self.upload_btn = QPushButton("ANALYZE")
+        self.upload_btn.setFixedWidth(180)
         self.upload_btn.clicked.connect(self.upload_file)
         self.upload_btn.setEnabled(False)
         file_row.addWidget(self.upload_btn)
@@ -48,11 +47,11 @@ class UploadWidget(QWidget):
         layout.addLayout(file_row)
         
         self.error_label = QLabel("")
-        self.error_label.setStyleSheet("color: #ff6b6b; font-size: 13px; padding: 8px;")
+        self.error_label.setStyleSheet("color: #ff6b6b; font-size: 14px; padding: 12px;")
         self.error_label.hide()
         layout.addWidget(self.error_label)
         
-        self.stats_group = QGroupBox("Analysis Results")
+        self.stats_group = QGroupBox("ANALYSIS RESULTS")
         self.stats_group.hide()
         
         stats_layout = QVBoxLayout()
@@ -97,8 +96,7 @@ class UploadWidget(QWidget):
         )
         if filepath:
             self.filepath = filepath
-            filename = filepath.replace("\\", "/").split("/")[-1]
-            self.file_label.setText(filename)
+            self.file_label.setText(filepath.replace("\\", "/").split("/")[-1])
             self.upload_btn.setEnabled(True)
             self.error_label.hide()
             
@@ -135,4 +133,4 @@ class UploadWidget(QWidget):
     def set_loading(self, loading):
         self.browse_btn.setEnabled(not loading)
         self.upload_btn.setEnabled(not loading and self.filepath is not None)
-        self.upload_btn.setText("Processing..." if loading else "Analyze")
+        self.upload_btn.setText("PROCESSING..." if loading else "ANALYZE")
