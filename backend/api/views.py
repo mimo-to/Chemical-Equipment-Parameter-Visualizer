@@ -97,11 +97,7 @@ def upload(request):
             logger.warning(f"Upload validation failed (Content): {str(e.message)}")
             return Response({'error': str(e.message)}, status=status.HTTP_400_BAD_REQUEST)
         
-        try:
-            validate_csv_content(df)
-        except ValidationError as e:
-            logger.warning(f"Upload validation failed (Content): {str(e.message)}")
-            return Response({'error': str(e.message)}, status=status.HTTP_400_BAD_REQUEST)
+
         
         total_count = len(df)
         avg_flowrate = round(df['Flowrate'].mean(), 2)

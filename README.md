@@ -78,7 +78,7 @@ exit()
 
 ## Web Frontend Setup
 
-1.  **Prerequisites**: Node.js 14 or higher
+1.  **Prerequisites**: Node.js 18+ (Recommended) or 16+
 2.  **Navigate to the web directory**:
     ```bash
     cd web
