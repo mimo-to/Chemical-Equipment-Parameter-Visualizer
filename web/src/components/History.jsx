@@ -48,29 +48,30 @@ const History = ({ refreshTrigger }) => {
         }
     };
 
-    if (loading && history.length === 0) return <p>Loading history...</p>;
-    if (error) return <p style={{ color: 'red' }}>{error}</p>;
+    if (loading && history.length === 0) {
+        return <p className="loading-state">Loading experiment log...</p>;
+    }
+
+    if (error) {
+        return <p className="alert alert-error">{error}</p>;
+    }
 
     return (
-        <div style={{ marginTop: '30px' }}>
-            <h3 style={{ borderBottom: '2px solid #007bff', paddingBottom: '10px', marginBottom: '15px' }}>Upload History (Last 5)</h3>
+        <div className="history-section">
+            <h3>Experiment Log (Last 5)</h3>
 
-            {downloadError && (
-                <div style={{ background: '#f8d7da', color: '#721c24', padding: '10px', marginBottom: '10px', borderRadius: '4px' }}>
-                    {downloadError}
-                </div>
-            )}
+            {downloadError && <div className="download-error">{downloadError}</div>}
 
             {history.length === 0 ? (
-                <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No history available yet.</p>
+                <p className="empty-state">No experiments recorded yet.</p>
             ) : (
                 <div className="table-container">
                     <table className="table">
                         <thead>
                             <tr>
                                 <th>Filename</th>
-                                <th>Uploaded At</th>
-                                <th style={{ textAlign: 'center' }}>Actions</th>
+                                <th>Timestamp</th>
+                                <th className="actions">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -78,14 +79,13 @@ const History = ({ refreshTrigger }) => {
                                 <tr key={item.id}>
                                     <td>{item.filename}</td>
                                     <td>{new Date(item.uploaded_at).toLocaleString()}</td>
-                                    <td style={{ textAlign: 'center' }}>
+                                    <td className="actions">
                                         <button
                                             onClick={() => handleDownload(item.id, item.filename)}
                                             disabled={downloadingId === item.id}
                                             className="btn-primary"
-                                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem' }}
                                         >
-                                            {downloadingId === item.id ? 'Downloading...' : 'Download PDF'}
+                                            {downloadingId === item.id ? 'Exporting...' : 'Export PDF'}
                                         </button>
                                     </td>
                                 </tr>

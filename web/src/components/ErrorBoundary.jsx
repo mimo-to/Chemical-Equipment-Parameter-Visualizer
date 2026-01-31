@@ -11,16 +11,18 @@ class ErrorBoundary extends React.Component {
     }
 
     componentDidCatch(error, errorInfo) {
-        console.error("ErrorBoundary caught an error", error, errorInfo);
+        console.error("System error:", error, errorInfo);
     }
 
     render() {
         if (this.state.hasError) {
             return (
-                <div style={{ padding: '20px', border: '1px solid red', margin: '20px', borderRadius: '5px' }}>
-                    <h2 style={{ color: 'red' }}>Something went wrong.</h2>
+                <div className="error-panel">
+                    <h2>System Malfunction</h2>
                     <p>{this.state.error && this.state.error.toString()}</p>
-                    <button onClick={() => window.location.reload()}>Reload Page</button>
+                    <button onClick={() => window.location.reload()}>
+                        Restart System
+                    </button>
                 </div>
             );
         }

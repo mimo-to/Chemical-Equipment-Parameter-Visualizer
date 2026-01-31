@@ -1,142 +1,265 @@
-import requests
-from datetime import datetime, timezone
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, 
-                             QPushButton, QHeaderView, QMessageBox, QFileDialog, QHBoxLayout)
+from PyQt5.QtWidgets import (
+    QWidget, QVBoxLayout, QLabel, QTableWidget, QTableWidgetItem,
+    QPushButton, QHeaderView, QHBoxLayout, QFileDialog
+)
 from PyQt5.QtCore import Qt
-from worker import Worker
+from PyQt5.QtGui import QFont
+
+from logger import get_logger
+from worker import HistoryWorker, DownloadWorker
+
+log = get_logger(__name__)
+
+THEME = """
+QWidget {
+    background-color: #03045e;
+    color: #caf0f8;
+    font-family: Consolas, monospace;
+}
+QLabel {
+    color: #caf0f8;
+    font-size: 13px;
+}
+QLabel#title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #00b4d8;
+    padding: 10px 0;
+}
+QLabel#loading {
+    color: #90e0ef;
+    font-size: 14px;
+    padding: 20px;
+}
+QLabel#empty {
+    color: #90e0ef;
+    font-size: 14px;
+    font-style: italic;
+    padding: 40px;
+}
+QTableWidget {
+    background-color: #023e8a;
+    border: 2px solid #0077b6;
+    gridline-color: #0077b6;
+    font-size: 13px;
+}
+QTableWidget::item {
+    padding: 12px;
+    border-bottom: 1px solid #0077b6;
+}
+QTableWidget::item:selected {
+    background-color: #0077b6;
+    border: none;
+    outline: none;
+}
+QTableWidget::item:focus {
+    background-color: #0077b6;
+    border: none;
+    outline: none;
+}
+QTableWidget {
+    selection-background-color: #0077b6;
+    outline: none;
+}
+QHeaderView::section {
+    background-color: #03045e;
+    color: #00b4d8;
+    padding: 14px 12px;
+    border: none;
+    border-bottom: 3px solid #06ffa5;
+    font-size: 13px;
+    font-weight: bold;
+}
+QPushButton {
+    background-color: #0077b6;
+    color: #caf0f8;
+    border: none;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #00b4d8;
+}
+QPushButton:disabled {
+    background-color: #555555;
+    color: #888888;
+}
+QPushButton#refresh {
+    padding: 10px 24px;
+    font-size: 13px;
+}
+"""
+
 
 class HistoryWidget(QWidget):
     def __init__(self, token):
         super().__init__()
         self.token = token
-        self.fetch_worker = None
-        self.pdf_worker = None
+        self.worker = None
+        self.download_worker = None
+        self.downloading_id = None
+        self.init_ui()
+        self.refresh()
+        
+    def init_ui(self):
+        self.setStyleSheet(THEME)
         
         layout = QVBoxLayout()
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(20)
         
-        controls_layout = QHBoxLayout()
-        self.refresh_btn = QPushButton("Refresh History")
-        self.refresh_btn.clicked.connect(self.fetch_history)
-        controls_layout.addWidget(self.refresh_btn)
+        # Header row
+        header = QHBoxLayout()
         
-        self.download_btn = QPushButton("Save PDF Report")
-        self.download_btn.setEnabled(False)
-        self.download_btn.clicked.connect(self.start_pdf_download)
-        controls_layout.addWidget(self.download_btn)
+        title = QLabel("Experiment Log (Last 5)")
+        title.setObjectName("title")
+        header.addWidget(title)
         
-        controls_layout.addStretch()
-        layout.addLayout(controls_layout)
+        header.addStretch()
         
+        self.refresh_btn = QPushButton("Refresh")
+        self.refresh_btn.setObjectName("refresh")
+        self.refresh_btn.clicked.connect(self.refresh)
+        header.addWidget(self.refresh_btn)
+        
+        layout.addLayout(header)
+        
+        # Loading label
+        self.loading_label = QLabel("Loading experiment log...")
+        self.loading_label.setObjectName("loading")
+        self.loading_label.setAlignment(Qt.AlignCenter)
+        self.loading_label.hide()
+        layout.addWidget(self.loading_label)
+        
+        # Empty label
+        self.empty_label = QLabel("No experiments recorded yet.")
+        self.empty_label.setObjectName("empty")
+        self.empty_label.setAlignment(Qt.AlignCenter)
+        self.empty_label.hide()
+        layout.addWidget(self.empty_label)
+        
+        # History table
         self.table = QTableWidget()
         self.table.setColumnCount(3)
-        self.table.setHorizontalHeaderLabels(["ID", "Filename", "Uploaded At"])
-        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
-        self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        self.table.setHorizontalHeaderLabels(["Filename", "Timestamp", "Actions"])
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Fixed)
+        self.table.horizontalHeader().resizeSection(2, 150)
+        self.table.verticalHeader().setVisible(False)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.table.setSelectionMode(QTableWidget.SingleSelection)
-        self.table.itemSelectionChanged.connect(self.check_selection)
-        
-        font = self.table.font()
-        font.setPointSize(12)
-        self.table.setFont(font)
-        self.table.verticalHeader().setDefaultSectionSize(40)
-        
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         layout.addWidget(self.table)
+        
+        # Error label
+        self.error_label = QLabel("")
+        self.error_label.setStyleSheet("color: #ff6b6b; font-size: 13px; padding: 8px;")
+        self.error_label.hide()
+        layout.addWidget(self.error_label)
         
         self.setLayout(layout)
         
-        self.fetch_history()
-
-    def check_selection(self):
-        selected = self.table.selectedItems()
-        self.download_btn.setEnabled(bool(selected))
-
-    def fetch_history(self, *args):
-        self.refresh_btn.setEnabled(False)
-        self.fetch_worker = Worker(self.fetch_task)
-        self.fetch_worker.finished.connect(self.on_fetch_finished)
-        self.fetch_worker.error.connect(self.on_fetch_error)
-        self.fetch_worker.start()
-
-    def fetch_task(self):
-        headers = {'Authorization': f'Token {self.token}'}
-        return requests.get("http://127.0.0.1:8000/api/history/", headers=headers)
-
-    def on_fetch_finished(self, response):
-        self.refresh_btn.setEnabled(True)
-        if response.status_code == 200:
-            self.populate_table(response.json())
-        else:
-            QMessageBox.warning(self, "Error", "Failed to fetch history.")
-
-    def on_fetch_error(self, error_msg):
-        self.refresh_btn.setEnabled(True)
-        QMessageBox.warning(self, "Network Error", f"Could not fetch history: {error_msg}")
-
-    def populate_table(self, data):
-        self.table.setRowCount(0)
-        for item in data[:5]:
-            row = self.table.rowCount()
-            self.table.insertRow(row)
-            
-            id_item = QTableWidgetItem(str(item['id']))
-            id_item.setFlags(id_item.flags() ^ Qt.ItemIsEditable)
-            self.table.setItem(row, 0, id_item)
-            
-            file_item = QTableWidgetItem(str(item['filename']))
-            file_item.setFlags(file_item.flags() ^ Qt.ItemIsEditable)
-            self.table.setItem(row, 1, file_item)
-            
-            raw_date_str = str(item.get('uploaded_at', ''))
-            formatted_date = raw_date_str
-            
-            try:
-                if 'Z' in raw_date_str:
-                    clean_date = raw_date_str.replace('Z', '')
-                    dt_utc = datetime.strptime(clean_date, "%Y-%m-%dT%H:%M:%S.%f")
-                    dt_utc = dt_utc.replace(tzinfo=timezone.utc)
-                    dt_local = dt_utc.astimezone()
-                    formatted_date = dt_local.strftime("%Y-%m-%d %I:%M %p")
-            except ValueError:
-                pass
-
-            date_item = QTableWidgetItem(formatted_date)
-            date_item.setFlags(date_item.flags() ^ Qt.ItemIsEditable)
-            self.table.setItem(row, 2, date_item)
-
-    def start_pdf_download(self):
-        selected = self.table.selectedItems()
-        if not selected:
+    def refresh(self):
+        self.loading_label.show()
+        self.empty_label.hide()
+        self.table.hide()
+        self.error_label.hide()
+        
+        self.worker = HistoryWorker(self.token)
+        self.worker.success.connect(self.on_success)
+        self.worker.error.connect(self.on_error)
+        self.worker.start()
+        
+    def on_success(self, data):
+        self.loading_label.hide()
+        
+        if not data:
+            self.empty_label.show()
+            self.table.hide()
             return
             
-        row = selected[0].row()
-        dataset_id = self.table.item(row, 0).text()
-        default_filename = f"report_{dataset_id}.pdf"
+        self.empty_label.hide()
+        self.table.show()
+        self.table.setRowCount(len(data))
         
-        save_path, _ = QFileDialog.getSaveFileName(self, "Save PDF", default_filename, "PDF Files (*.pdf)")
+        for row, item in enumerate(data):
+            # Filename
+            filename_item = QTableWidgetItem(item.get("filename", ""))
+            filename_item.setData(Qt.UserRole, item.get("id"))
+            self.table.setItem(row, 0, filename_item)
+            
+            # Timestamp - convert UTC to local
+            from datetime import datetime, timezone
+            timestamp = item.get("uploaded_at", "")
+            try:
+                dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+                local_dt = dt.astimezone()  # Convert to local timezone
+                formatted = local_dt.strftime("%Y-%m-%d %H:%M:%S")
+            except:
+                formatted = timestamp
+            self.table.setItem(row, 1, QTableWidgetItem(formatted))
+            
+            # Export button
+            btn = QPushButton("Export PDF")
+            btn.clicked.connect(lambda checked, id=item.get("id"): self.download(id))
+            self.table.setCellWidget(row, 2, btn)
+            
+        # Adjust row heights
+        self.table.resizeRowsToContents()
+            
+    def on_error(self, message):
+        log.error(f"History load failed: {message}")
+        self.loading_label.hide()
+        self.error_label.setText(f"Error: {message}")
+        self.error_label.show()
         
-        if save_path:
-            self.download_btn.setEnabled(False)
-            self.pdf_worker = Worker(self.pdf_task, dataset_id, save_path)
-            self.pdf_worker.finished.connect(self.on_pdf_finished)
-            self.pdf_worker.error.connect(self.on_pdf_error)
-            self.pdf_worker.start()
-
-    def pdf_task(self, dataset_id, save_path):
-        headers = {'Authorization': f'Token {self.token}'}
-        response = requests.get(f"http://127.0.0.1:8000/api/report/{dataset_id}/", headers=headers)
-        if response.status_code == 200:
-            with open(save_path, 'wb') as f:
-                f.write(response.content)
-        return response
-
-    def on_pdf_finished(self, response):
-        self.download_btn.setEnabled(True)
-        if response.status_code == 200:
-            QMessageBox.information(self, "Success", "PDF Report saved successfully!")
-        else:
-            QMessageBox.warning(self, "Error", "Failed to generate report.")
-
-    def on_pdf_error(self, error_msg):
-        self.download_btn.setEnabled(True)
-        QMessageBox.critical(self, "Error", f"Failed to save PDF: {error_msg}")
+    def download(self, dataset_id):
+        if self.downloading_id:
+            return
+        
+        # Show file save dialog
+        filepath, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Report",
+            f"report_{dataset_id}.pdf",
+            "PDF Files (*.pdf)"
+        )
+        
+        if not filepath:  # User cancelled
+            return
+            
+        self.downloading_id = dataset_id
+        self.save_filepath = filepath
+        self.update_download_buttons()
+        
+        self.download_worker = DownloadWorker(dataset_id, self.token)
+        self.download_worker.filepath = filepath  # Pass filepath to worker
+        self.download_worker.success.connect(self.on_download_success)
+        self.download_worker.error.connect(self.on_download_error)
+        self.download_worker.start()
+        
+    def on_download_success(self, filepath):
+        log.info(f"Report downloaded: {filepath}")
+        self.downloading_id = None
+        self.update_download_buttons()
+        
+    def on_download_error(self, message):
+        log.error(f"Download failed: {message}")
+        self.downloading_id = None
+        self.update_download_buttons()
+        self.error_label.setText(f"Download failed: {message}")
+        self.error_label.show()
+        
+    def update_download_buttons(self):
+        for row in range(self.table.rowCount()):
+            btn = self.table.cellWidget(row, 2)
+            item = self.table.item(row, 0)
+            if btn and item:
+                dataset_id = item.data(Qt.UserRole)
+                if dataset_id == self.downloading_id:
+                    btn.setText("Exporting...")
+                    btn.setEnabled(False)
+                else:
+                    btn.setText("Export PDF")
+                    btn.setEnabled(self.downloading_id is None)

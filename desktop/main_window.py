@@ -1,51 +1,80 @@
-from PyQt5.QtWidgets import QMainWindow, QAction, QVBoxLayout, QWidget, QTabWidget
+from PyQt5.QtWidgets import QMainWindow, QTabWidget, QWidget, QVBoxLayout
+from PyQt5.QtGui import QPalette, QColor, QFont
 from PyQt5.QtCore import Qt
+
 from upload_widget import UploadWidget
 from charts_widget import ChartsWidget
 from history_widget import HistoryWidget
+
+THEME = """
+QMainWindow {
+    background-color: #03045e;
+}
+QTabWidget::pane {
+    background-color: #023e8a;
+    border: 1px solid #0077b6;
+    border-top: none;
+}
+QTabBar {
+    background-color: #03045e;
+}
+QTabBar::tab {
+    background-color: #023e8a;
+    color: #90e0ef;
+    border: 1px solid #0077b6;
+    border-bottom: none;
+    padding: 12px 30px;
+    margin-right: 4px;
+    min-width: 120px;
+    font-family: Consolas, monospace;
+    font-size: 13px;
+    font-weight: bold;
+}
+QTabBar::tab:selected {
+    background-color: #03045e;
+    color: #00b4d8;
+    border-bottom: 3px solid #06ffa5;
+}
+QTabBar::tab:hover:!selected {
+    background-color: #0077b6;
+}
+QTabBar::tab:disabled {
+    color: #555555;
+}
+"""
+
 
 class MainWindow(QMainWindow):
     def __init__(self, token):
         super().__init__()
         self.token = token
-        self.setWindowTitle("Chemical Equipment Parameter Visualizer")
-        self.setGeometry(100, 100, 1024, 768)
-
-        self.tabs = QTabWidget()
-        self.setCentralWidget(self.tabs)
-
-        self.setup_dashboard_tab()
-        self.setup_history_tab()
-
-        self.create_menu_bar()
-
-    def setup_dashboard_tab(self):
-        dashboard_tab = QWidget()
-        layout = QVBoxLayout(dashboard_tab)
-
-        self.upload_widget = UploadWidget(self.token)
-        layout.addWidget(self.upload_widget)
-
-        self.charts_widget = ChartsWidget()
-        layout.addWidget(self.charts_widget, stretch=1)
-
-        self.upload_widget.upload_success.connect(self.charts_widget.update_charts)
+        self.init_ui()
         
-        self.tabs.addTab(dashboard_tab, "Dashboard")
-
-    def setup_history_tab(self):
+    def init_ui(self):
+        self.setWindowTitle("Chemical Equipment Parameter Visualizer")
+        self.setMinimumSize(1000, 700)
+        self.resize(1100, 750)
+        self.setStyleSheet(THEME)
+        
+        tabs = QTabWidget()
+        tabs.setDocumentMode(False)
+        
+        self.upload_widget = UploadWidget(self.token)
+        self.charts_widget = ChartsWidget(self.token)
         self.history_widget = HistoryWidget(self.token)
-        self.upload_widget.upload_success.connect(self.history_widget.fetch_history)
-        self.tabs.addTab(self.history_widget, "History")
-
-    def create_menu_bar(self):
-        menu_bar = self.menuBar()
-
-        file_menu = menu_bar.addMenu("File")
-        exit_action = QAction("Exit", self)
-        exit_action.triggered.connect(self.close)
-        file_menu.addAction(exit_action)
-
-        help_menu = menu_bar.addMenu("Help")
-        about_action = QAction("About", self)
-        help_menu.addAction(about_action)
+        
+        self.upload_widget.upload_success.connect(self.on_upload_success)
+        
+        tabs.addTab(self.upload_widget, "  Data Input  ")
+        tabs.addTab(self.charts_widget, "  Visualization  ")
+        tabs.addTab(self.history_widget, "  Experiment Log  ")
+        
+        tabs.setTabEnabled(1, False)
+        self.tabs = tabs
+        
+        self.setCentralWidget(tabs)
+        
+    def on_upload_success(self, dataset_id):
+        self.tabs.setTabEnabled(1, True)
+        self.charts_widget.load_data(dataset_id)
+        self.history_widget.refresh()

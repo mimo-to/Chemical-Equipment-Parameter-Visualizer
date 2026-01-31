@@ -9,13 +9,13 @@ const Upload = ({ onUploadSuccess }) => {
     const [error, setError] = useState('');
     const { token, logout } = useAuth();
 
+    const MAX_SIZE = 10 * 1024 * 1024;
+
     const handleFileChange = (e) => {
         setFile(e.target.files[0]);
         setError('');
         setStats(null);
     };
-
-    const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
     const handleUpload = async () => {
         if (!file) return;
@@ -24,30 +24,23 @@ const Upload = ({ onUploadSuccess }) => {
         setStats(null);
 
         if (!file.name.toLowerCase().endsWith('.csv')) {
-            const msg = 'Invalid file type. Only .csv files are allowed.';
-            console.warn(`[Upload] Pre-validation failed: ${msg}`);
-            setError(msg);
+            setError('Invalid file type. Only .csv files are allowed.');
             return;
         }
 
-        if (file.size > MAX_FILE_SIZE) {
-            const msg = `File too large. Max size is ${MAX_FILE_SIZE / (1024 * 1024)}MB.`;
-            console.warn(`[Upload] Pre-validation failed: ${msg}`);
-            setError(msg);
+        if (file.size > MAX_SIZE) {
+            setError(`File too large. Max size is ${MAX_SIZE / (1024 * 1024)}MB.`);
             return;
         }
 
-        console.log(`[Upload] Starting upload: ${file.name} (${file.size} bytes)`);
         setLoading(true);
         try {
             const data = await uploadCSV(file, token);
-            console.log('[Upload] Success, Stats received');
             setStats(data);
             if (onUploadSuccess && data.id) {
                 onUploadSuccess(data.id);
             }
         } catch (err) {
-            console.error('[Upload] Failed:', err.message);
             if (err.message === 'Unauthorized') {
                 logout();
                 return;
@@ -55,23 +48,27 @@ const Upload = ({ onUploadSuccess }) => {
             setError(err.message || 'Upload failed');
         } finally {
             setLoading(false);
-            const fileInput = document.getElementById('fileInput');
-            if (fileInput) fileInput.value = '';
+            const input = document.getElementById('fileInput');
+            if (input) input.value = '';
         }
     };
 
     return (
-        <div style={{ marginBottom: '20px' }}>
-            <h3>Upload CSV</h3>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px' }}>
-                <input id="fileInput" type="file" accept=".csv" onChange={handleFileChange} style={{ padding: '5px' }} />
+        <div className="upload-section">
+            <h3>Data Acquisition</h3>
+            <div className="file-input-row">
+                <input
+                    id="fileInput"
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileChange}
+                />
                 <button
                     onClick={handleUpload}
                     disabled={!file || loading}
                     className="btn-primary"
-                    style={{ padding: '0.6rem 1.2rem' }}
                 >
-                    {loading ? 'Uploading...' : 'Upload'}
+                    {loading ? 'Processing...' : 'Analyze'}
                 </button>
             </div>
 
@@ -79,11 +76,25 @@ const Upload = ({ onUploadSuccess }) => {
 
             {stats && (
                 <div className="alert alert-success">
-                    <h4 style={{ margin: '0 0 10px 0', color: 'inherit' }}>Upload Summary</h4>
-                    <p style={{ margin: '5px 0' }}><strong>Total Records:</strong> {stats.total_count}</p>
-                    <p style={{ margin: '5px 0' }}><strong>Avg Flowrate:</strong> {Number(stats.avg_flowrate).toFixed(2)}</p>
-                    <p style={{ margin: '5px 0' }}><strong>Avg Pressure:</strong> {Number(stats.avg_pressure).toFixed(2)}</p>
-                    <p style={{ margin: '5px 0' }}><strong>Avg Temperature:</strong> {Number(stats.avg_temperature).toFixed(2)}</p>
+                    <div className="stats-display">
+                        <h4>Analysis Complete</h4>
+                        <div className="stat-row">
+                            <span className="stat-label">Total Records</span>
+                            <span className="stat-value">{stats.total_count}</span>
+                        </div>
+                        <div className="stat-row">
+                            <span className="stat-label">Avg Flowrate</span>
+                            <span className="stat-value">{Number(stats.avg_flowrate).toFixed(2)}</span>
+                        </div>
+                        <div className="stat-row">
+                            <span className="stat-label">Avg Pressure</span>
+                            <span className="stat-value">{Number(stats.avg_pressure).toFixed(2)}</span>
+                        </div>
+                        <div className="stat-row">
+                            <span className="stat-label">Avg Temperature</span>
+                            <span className="stat-value">{Number(stats.avg_temperature).toFixed(2)}</span>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

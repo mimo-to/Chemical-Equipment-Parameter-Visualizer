@@ -19,7 +19,7 @@ const Dashboard = () => {
         <ErrorBoundary>
             <div className="dashboard-container">
                 <div className="header">
-                    <h1>Dashboard</h1>
+                    <h1>Analysis Workstation</h1>
                     <button onClick={logout} className="btn-logout">
                         Logout
                     </button>
@@ -30,20 +30,20 @@ const Dashboard = () => {
                         onClick={() => setActiveTab('upload')}
                         className={`tab-btn ${activeTab === 'upload' ? 'active' : ''}`}
                     >
-                        Upload
+                        Data Input
                     </button>
                     <button
                         onClick={() => setActiveTab('charts')}
                         className={`tab-btn ${activeTab === 'charts' ? 'active' : ''}`}
                         disabled={!datasetId}
                     >
-                        Charts
+                        Visualization
                     </button>
                     <button
                         onClick={() => setActiveTab('history')}
                         className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
                     >
-                        History
+                        Experiment Log
                     </button>
                 </div>
 

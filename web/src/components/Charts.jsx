@@ -23,8 +23,8 @@ ChartJS.register(
     ArcElement
 );
 
-ChartJS.defaults.color = '#f8fafc';
-ChartJS.defaults.borderColor = '#334155';
+ChartJS.defaults.color = '#caf0f8';
+ChartJS.defaults.borderColor = '#0077b6';
 
 const Charts = ({ datasetId }) => {
     const [chartData, setChartData] = useState(null);
@@ -40,9 +40,7 @@ const Charts = ({ datasetId }) => {
             try {
                 const data = await getVisualization(datasetId, token);
                 setChartData(data);
-                console.log(`[Visualization] Loaded data for Dataset ID ${datasetId}`);
             } catch (err) {
-                console.error('[Visualization] Failed to load data:', err.message);
                 setError('Failed to load chart data');
             } finally {
                 setLoading(false);
@@ -53,7 +51,7 @@ const Charts = ({ datasetId }) => {
     }, [datasetId, token]);
 
     if (!datasetId) return null;
-    if (loading) return <p>Loading charts...</p>;
+    if (loading) return <p className="loading-state">Loading visualization data...</p>;
     if (error) return <p className="alert alert-error">{error}</p>;
     if (!chartData) return null;
 
@@ -61,64 +59,104 @@ const Charts = ({ datasetId }) => {
 
     const pieData = {
         labels: type_distribution.labels,
-        datasets: [
-            {
-                label: 'Equipment Count',
-                data: type_distribution.data,
-                backgroundColor: [
-                    '#3b82f6',
-                    '#10b981',
-                    '#f59e0b',
-                    '#ef4444',
-                    '#8b5cf6',
-                    '#ec4899',
-                    '#06b6d4',
-                    '#f97316',
-                    '#6366f1',
-                    '#14b8a6',
-                ],
-                borderWidth: 0,
-            },
-        ],
+        datasets: [{
+            label: 'Equipment Count',
+            data: type_distribution.data,
+            backgroundColor: [
+                '#00b4d8',
+                '#06ffa5',
+                '#ffd60a',
+                '#0077b6',
+                '#90e0ef',
+                '#48cae4',
+                '#023e8a',
+                '#caf0f8',
+                '#ade8f4',
+                '#03045e',
+            ],
+            borderWidth: 0,
+        }],
     };
 
     const barData = {
         labels: averages.labels,
-        datasets: [
-            {
-                label: 'Average Values',
-                data: averages.data,
-                backgroundColor: [
-                    '#3b82f6',
-                    '#f59e0b',
-                    '#ef4444',
-                ],
-                borderRadius: 4,
-            },
-        ],
+        datasets: [{
+            label: 'Average Values',
+            data: averages.data,
+            backgroundColor: [
+                '#00b4d8',
+                '#06ffa5',
+                '#ffd60a',
+            ],
+            borderRadius: 2,
+        }],
     };
 
     const options = {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: { position: 'bottom' },
+            legend: {
+                position: 'bottom',
+                labels: {
+                    font: { family: "'JetBrains Mono', monospace", size: 11 },
+                    padding: 16,
+                }
+            },
             title: { display: false },
+        },
+        scales: {
+            x: {
+                grid: { color: 'rgba(0, 119, 182, 0.2)' },
+                ticks: { font: { family: "'JetBrains Mono', monospace", size: 10 } }
+            },
+            y: {
+                grid: { color: 'rgba(0, 119, 182, 0.2)' },
+                ticks: { font: { family: "'JetBrains Mono', monospace", size: 10 } }
+            }
+        }
+    };
+
+    const pieOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    font: { family: "'JetBrains Mono', monospace", size: 11 },
+                    padding: 12,
+                }
+            },
         },
     };
 
     return (
-        <div style={{ marginTop: '30px', display: 'flex', gap: '30px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <div className="chart-container">
-                <h3 style={{ textAlign: 'center', marginBottom: '20px', color: '#f8fafc' }}>Equipment Type Distribution</h3>
-                <div style={{ height: '300px', position: 'relative' }}>
-                    <Pie data={pieData} options={options} />
+        <div className="charts-section">
+            <div className="stats-summary">
+                <h3>Parameter Averages</h3>
+                <div className="stats-grid">
+                    {averages.labels.map((label, i) => (
+                        <div key={label} className="stat-card">
+                            <span className="stat-label">{label}</span>
+                            <span className="stat-value">{Number(averages.data[i]).toFixed(2)}</span>
+                        </div>
+                    ))}
                 </div>
             </div>
-            <div className="chart-container">
-                <h3 style={{ textAlign: 'center', marginBottom: '20px', color: '#f8fafc' }}>Average Parameters</h3>
-                <div style={{ height: '300px', position: 'relative' }}>
-                    <Bar data={barData} options={options} />
+
+            <div className="charts-grid">
+                <div className="chart-container">
+                    <h3 className="chart-title">Equipment Type Distribution</h3>
+                    <div className="chart-wrapper">
+                        <Pie data={pieData} options={pieOptions} />
+                    </div>
+                </div>
+                <div className="chart-container">
+                    <h3 className="chart-title">Average Parameters</h3>
+                    <div className="chart-wrapper">
+                        <Bar data={barData} options={options} />
+                    </div>
                 </div>
             </div>
         </div>
