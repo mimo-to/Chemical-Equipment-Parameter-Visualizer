@@ -16,28 +16,31 @@ BASE_THEME = f"""
 QWidget {{
     background-color: {COLORS['background']};
     color: {COLORS['text']};
-    font-family: Consolas, monospace;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 15px;
 }}
 QLabel {{
     color: {COLORS['text']};
-    font-size: 13px;
+    font-size: 15px;
 }}
 QLabel#title {{
-    font-size: 18px;
+    font-size: 22px;
     font-weight: bold;
     color: {COLORS['primary']};
-    padding: 10px 0;
+    padding: 12px 0;
 }}
 QPushButton {{
-    background-color: {COLORS['border']};
-    color: {COLORS['text']};
+    background-color: {COLORS['primary']};
+    color: {COLORS['background']};
     border: none;
-    padding: 12px 24px;
-    font-size: 13px;
+    border-radius: 4px;
+    padding: 14px 28px;
+    font-size: 14px;
     font-weight: bold;
+    letter-spacing: 0.5px;
 }}
 QPushButton:hover {{
-    background-color: {COLORS['primary']};
+    background-color: #0096c7;
 }}
 QPushButton:pressed {{
     background-color: {COLORS['card']};
@@ -45,50 +48,55 @@ QPushButton:pressed {{
 QPushButton:disabled {{
     background-color: #555555;
     color: #888888;
+    qproperty-alignment: AlignCenter;
 }}
 QGroupBox {{
     background-color: {COLORS['card']};
     border: 2px solid {COLORS['border']};
-    margin-top: 20px;
-    padding: 20px;
-    font-size: 14px;
+    border-radius: 6px;
+    margin-top: 24px;
+    padding: 24px;
+    font-size: 16px;
     font-weight: bold;
 }}
 QGroupBox::title {{
     color: {COLORS['primary']};
     subcontrol-origin: margin;
     left: 20px;
-    padding: 0 10px;
+    padding: 0 12px;
 }}
 """
 
 UPLOAD_THEME = BASE_THEME + f"""
 QLabel#filename {{
     color: {COLORS['muted']};
-    padding: 8px;
+    padding: 12px;
     background-color: {COLORS['card']};
     border: 1px solid {COLORS['border']};
+    border-radius: 4px;
+    font-size: 14px;
 }}
 QLabel#stat-name {{
     color: {COLORS['muted']};
-    font-size: 14px;
-    padding: 12px 16px;
+    font-size: 15px;
+    padding: 14px 18px;
     background-color: {COLORS['card']};
     border: 1px solid {COLORS['border']};
 }}
 QLabel#stat-value {{
     color: {COLORS['success']};
     font-weight: bold;
-    font-size: 14px;
-    padding: 12px 16px;
+    font-size: 16px;
+    padding: 14px 18px;
     background-color: {COLORS['card']};
     border: 1px solid {COLORS['border']};
-    min-width: 100px;
+    min-width: 120px;
 }}
 QPushButton#browse {{
     background-color: transparent;
     border: 2px solid {COLORS['border']};
-    padding: 10px 20px;
+    color: {COLORS['text']};
+    padding: 12px 24px;
 }}
 QPushButton#browse:hover {{
     background-color: {COLORS['card']};
@@ -97,24 +105,26 @@ QPushButton#browse:hover {{
 QFrame#stat-row {{
     background-color: {COLORS['card']};
     border: 1px solid {COLORS['border']};
+    border-radius: 4px;
 }}
 """
 
 HISTORY_THEME = BASE_THEME + f"""
 QLabel#loading {{
     color: {COLORS['primary']};
-    font-size: 14px;
-    padding: 20px;
+    font-size: 16px;
+    padding: 24px;
 }}
 QLabel#error {{
     color: {COLORS['error']};
-    font-size: 13px;
-    padding: 8px;
+    font-size: 15px;
+    padding: 12px;
 }}
 QPushButton#refresh {{
     background-color: transparent;
     border: 2px solid {COLORS['border']};
-    padding: 8px 16px;
+    color: {COLORS['text']};
+    padding: 10px 20px;
 }}
 QPushButton#refresh:hover {{
     background-color: {COLORS['card']};
@@ -123,12 +133,31 @@ QPushButton#refresh:hover {{
 QTableWidget {{
     background-color: {COLORS['card']};
     border: 1px solid {COLORS['border']};
+    border-radius: 4px;
     gridline-color: {COLORS['border']};
     selection-background-color: {COLORS['border']};
     outline: none;
+    font-size: 14px;
+}}
+QTableWidget QPushButton {{
+    background-color: {COLORS['primary']};
+    color: {COLORS['background']};
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: bold;
+    min-width: 100px;
+}}
+QTableWidget QPushButton:hover {{
+    background-color: #0096c7;
+}}
+QTableWidget QPushButton:disabled {{
+    background-color: #555555;
+    color: #888888;
 }}
 QTableWidget::item {{
-    padding: 12px;
+    padding: 14px;
     border-bottom: 1px solid {COLORS['border']};
 }}
 QTableWidget::item:selected {{
@@ -144,18 +173,20 @@ QTableWidget::item:focus {{
 QHeaderView::section {{
     background-color: {COLORS['background']};
     color: {COLORS['muted']};
-    padding: 12px;
+    padding: 14px;
     border: none;
-    border-bottom: 2px solid {COLORS['border']};
+    border-bottom: 2px solid {COLORS['primary']};
     font-weight: bold;
+    font-size: 13px;
     text-transform: uppercase;
+    letter-spacing: 1px;
 }}
 """
 
 CHARTS_THEME = BASE_THEME + f"""
 QLabel#loading {{
     color: {COLORS['primary']};
-    font-size: 14px;
-    padding: 40px;
+    font-size: 16px;
+    padding: 48px;
 }}
 """

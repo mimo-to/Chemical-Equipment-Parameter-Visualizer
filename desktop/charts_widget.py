@@ -2,7 +2,6 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel
 from PyQt5.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-
 from theme import COLORS, CHART_COLORS, CHARTS_THEME
 from worker import VisualizationWorker
 
@@ -15,10 +14,10 @@ class ChartsWidget(QWidget):
         self.setStyleSheet(CHARTS_THEME)
         
         self.layout = QVBoxLayout()
-        self.layout.setContentsMargins(30, 30, 30, 30)
-        self.layout.setSpacing(20)
+        self.layout.setContentsMargins(36, 36, 36, 36)
+        self.layout.setSpacing(24)
         
-        title = QLabel("Visualization")
+        title = QLabel("DATA VISUALIZATION")
         title.setObjectName("title")
         self.layout.addWidget(title)
         
@@ -28,7 +27,7 @@ class ChartsWidget(QWidget):
         self.layout.addWidget(self.loading_label)
         
         self.charts_layout = QHBoxLayout()
-        self.charts_layout.setSpacing(20)
+        self.charts_layout.setSpacing(24)
         self.layout.addLayout(self.charts_layout, 1)
         
         self.setLayout(self.layout)
@@ -74,16 +73,16 @@ class ChartsWidget(QWidget):
             _, _, autotexts = ax.pie(
                 values, labels=pie_labels, colors=colors,
                 autopct='%1.1f%%', startangle=90,
-                textprops={'color': COLORS['text'], 'fontsize': 9, 'fontfamily': 'monospace'}
+                textprops={'color': COLORS['text'], 'fontsize': 11, 'fontfamily': 'monospace'}
             )
             for t in autotexts:
                 t.set_color('#fff')
                 t.set_fontweight('bold')
-                t.set_fontsize(10)
+                t.set_fontsize(12)
                 
-            ax.set_title("Equipment Type Distribution", 
-                         color=COLORS['primary'], fontsize=14,
-                         fontfamily='monospace', fontweight='bold', pad=20)
+            ax.set_title("EQUIPMENT TYPE DISTRIBUTION", 
+                         color=COLORS['primary'], fontsize=16,
+                         fontfamily='monospace', fontweight='bold', pad=24)
             
             fig.tight_layout()
             self.charts_layout.addWidget(FigureCanvas(fig))
@@ -100,9 +99,9 @@ class ChartsWidget(QWidget):
             ax.bar(labels, values, color=CHART_COLORS[:len(labels)], 
                    edgecolor=COLORS['border'], linewidth=2)
             
-            ax.set_title("Average Parameters", color=COLORS['primary'], 
-                         fontsize=14, fontfamily='monospace', fontweight='bold', pad=20)
-            ax.tick_params(colors=COLORS['text'], labelsize=11)
+            ax.set_title("AVERAGE PARAMETERS", color=COLORS['primary'], 
+                         fontsize=16, fontfamily='monospace', fontweight='bold', pad=24)
+            ax.tick_params(colors=COLORS['text'], labelsize=13)
             ax.spines['bottom'].set_color(COLORS['border'])
             ax.spines['left'].set_color(COLORS['border'])
             ax.spines['top'].set_visible(False)

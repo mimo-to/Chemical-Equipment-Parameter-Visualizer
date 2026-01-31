@@ -4,7 +4,6 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 from datetime import datetime
-
 from theme import HISTORY_THEME
 from worker import HistoryWorker, DownloadWorker
 
@@ -19,16 +18,16 @@ class HistoryWidget(QWidget):
         self.setStyleSheet(HISTORY_THEME)
         
         layout = QVBoxLayout()
-        layout.setContentsMargins(30, 30, 30, 30)
-        layout.setSpacing(20)
+        layout.setContentsMargins(36, 36, 36, 36)
+        layout.setSpacing(24)
         
         header = QHBoxLayout()
-        title = QLabel("Experiment Log (Last 5)")
+        title = QLabel("EXPERIMENT LOG (Last 5)")
         title.setObjectName("title")
         header.addWidget(title)
         header.addStretch()
         
-        self.refresh_btn = QPushButton("Refresh")
+        self.refresh_btn = QPushButton("REFRESH")
         self.refresh_btn.setObjectName("refresh")
         self.refresh_btn.clicked.connect(self.refresh)
         header.addWidget(self.refresh_btn)
@@ -48,14 +47,15 @@ class HistoryWidget(QWidget):
         
         self.table = QTableWidget()
         self.table.setColumnCount(3)
-        self.table.setHorizontalHeaderLabels(["Filename", "Timestamp", "Actions"])
+        self.table.setHorizontalHeaderLabels(["FILENAME", "TIMESTAMP", "ACTIONS"])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Fixed)
-        self.table.horizontalHeader().resizeSection(2, 150)
+        self.table.horizontalHeader().resizeSection(2, 180)
         self.table.verticalHeader().setVisible(False)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table.verticalHeader().setDefaultSectionSize(50)
         layout.addWidget(self.table)
         
         self.error_label = QLabel("")
@@ -102,7 +102,7 @@ class HistoryWidget(QWidget):
                 formatted = ts
             self.table.setItem(row, 1, QTableWidgetItem(formatted))
             
-            btn = QPushButton("Export PDF")
+            btn = QPushButton("EXPORT PDF")
             btn.clicked.connect(lambda _, id=item.get("id"): self.download(id))
             self.table.setCellWidget(row, 2, btn)
             
@@ -150,8 +150,8 @@ class HistoryWidget(QWidget):
             if btn and item:
                 dataset_id = item.data(Qt.UserRole)
                 if dataset_id == self.downloading_id:
-                    btn.setText("Exporting...")
+                    btn.setText("EXPORTING...")
                     btn.setEnabled(False)
                 else:
-                    btn.setText("Export PDF")
+                    btn.setText("EXPORT PDF")
                     btn.setEnabled(self.downloading_id is None)
