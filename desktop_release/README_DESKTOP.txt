@@ -1,20 +1,18 @@
-Chemical Equipment Visualizer - Desktop Application
-===================================================
+Chemical Equipment Visualizer
 
-Installation & Usage Steps:
 
-1. Prerequisite:
-   Ensure the Backend Server is running.
-   - Navigate to the `backend/` directory.
-   - Run: `python manage.py runserver`
-   - The API should be accessible at http://127.0.0.1:8000/
+Welcome! 
 
-2. Run the Application:
-   - Double-click the `Chemical_Equipment_Visualizer_Desktop.exe` file.
+This is the desktop client for the Chemical Equipment Parameter Visualizer.
 
-3. Login:
-   - Use your registered credentials (same as the web application) to log in.
+HOW TO RUN:
 
-Troubleshooting:
-- If the app fails to connect, ensure the backend server is running on localhost:8000.
-- Check `desktop_app.log` generated in the same folder for error details.
+1. Ensure your Backend Server is running (http://127.0.0.1:8000).
+2. Double-click "Chemical_Equipment_Visualizer_Desktop.exe" to launch.
+3. Login with your credentials.
+
+TROUBLESHOOTING:
+
+If the app doesn't open or says "Connection Failed":
+- Check if the backend is running.
+- Check "desktop_app.log" in this folder for details.
