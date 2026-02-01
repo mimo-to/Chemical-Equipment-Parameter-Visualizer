@@ -312,9 +312,49 @@ button {
 .chart-wrapper { height: 280px; position: relative; }
 
 .history-section { margin-top: 24px; }
-.history-section h3 { padding-bottom: 12px; border-bottom: 1px solid var(--secondary); }
+.history-header { display: flex; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--secondary); gap: 12px; }
+.history-header h3 { margin: 0; }
+.btn-refresh {
+  background: transparent;
+  border: 1px solid var(--secondary);
+  color: var(--text);
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+  margin-left: auto;
+}
+.btn-refresh:hover { background: rgba(0, 180, 216, 0.15); border-color: var(--primary); color: var(--primary); }
+.btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+.storage-indicator {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--primary);
+  letter-spacing: 2px;
+  padding: 6px 12px;
+  border: 1px solid var(--secondary);
+  border-radius: var(--radius);
+  background: rgba(0, 180, 216, 0.1);
+}
 
-.table-container { overflow-x: auto; }
+.table-container { overflow-x: auto; position: relative; }
+.table-container.is-loading { opacity: 0.5; pointer-events: none; }
+.table-container.is-loading::after {
+  content: 'REFRESHING...';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--primary);
+  letter-spacing: 2px;
+  animation: pulse 1s ease-in-out infinite;
+}
 
 .table {
   width: 100%;

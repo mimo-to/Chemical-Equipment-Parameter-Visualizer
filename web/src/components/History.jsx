@@ -10,22 +10,26 @@ const History = ({ refreshTrigger }) => {
     const [downloadError, setDownloadError] = useState('');
     const { token } = useAuth();
 
-    useEffect(() => {
-        const fetchHistory = async () => {
-            setLoading(true);
-            try {
-                const data = await getHistory(token);
-                setHistory(data);
-                setError('');
-            } catch (err) {
-                setError('Failed to load history');
-            } finally {
-                setLoading(false);
-            }
-        };
+    const fetchHistory = async () => {
+        setLoading(true);
+        try {
+            const data = await getHistory(token);
+            setHistory(data);
+            setError('');
+        } catch (err) {
+            setError('Failed to load history');
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchHistory();
     }, [token, refreshTrigger]);
+
+    const handleRefresh = () => {
+        fetchHistory();
+    };
 
     const handleDownload = async (id, filename) => {
         setDownloadingId(id);
@@ -48,24 +52,40 @@ const History = ({ refreshTrigger }) => {
         }
     };
 
-    if (loading && history.length === 0) {
-        return <p className="loading-state">Loading experiment log...</p>;
-    }
-
     if (error) {
         return <p className="alert alert-error">{error}</p>;
     }
 
+    const getStorageIndicator = () => {
+        const filled = history.length;
+        const empty = 5 - filled;
+        return '⬢'.repeat(filled) + '⬡'.repeat(empty);
+    };
+
     return (
         <div className="history-section">
-            <h3>Experiment Log (Last 5)</h3>
+            <div className="history-header">
+                <h3>Experiment Log</h3>
+                <span className="storage-indicator">
+                    {getStorageIndicator()} {history.length}/5
+                </span>
+                <button
+                    onClick={handleRefresh}
+                    className="btn-refresh"
+                    disabled={loading}
+                >
+                    {loading ? 'LOADING...' : 'REFRESH'}
+                </button>
+            </div>
 
             {downloadError && <div className="download-error">{downloadError}</div>}
 
-            {history.length === 0 ? (
+            {history.length === 0 && !loading ? (
                 <p className="empty-state">No experiments recorded yet.</p>
+            ) : history.length === 0 && loading ? (
+                <p className="loading-state">Loading experiment log...</p>
             ) : (
-                <div className="table-container">
+                <div className={`table-container ${loading ? 'is-loading' : ''}`}>
                     <table className="table">
                         <thead>
                             <tr>

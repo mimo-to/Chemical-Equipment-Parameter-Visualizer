@@ -22,9 +22,13 @@ class HistoryWidget(QWidget):
         layout.setSpacing(24)
         
         header = QHBoxLayout()
-        title = QLabel("EXPERIMENT LOG (Last 5)")
+        title = QLabel("EXPERIMENT LOG")
         title.setObjectName("title")
         header.addWidget(title)
+        
+        self.storage_label = QLabel("⬡⬡⬡⬡⬡ 0/5")
+        self.storage_label.setObjectName("storage")
+        header.addWidget(self.storage_label)
         header.addStretch()
         
         self.refresh_btn = QPushButton("REFRESH")
@@ -79,6 +83,11 @@ class HistoryWidget(QWidget):
         
     def on_success(self, data):
         self.loading_label.hide()
+        
+        count = len(data) if data else 0
+        filled = '⬢' * count
+        empty = '⬡' * (5 - count)
+        self.storage_label.setText(f"{filled}{empty} {count}/5")
         
         if not data:
             self.empty_label.show()

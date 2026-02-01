@@ -127,47 +127,128 @@ def get_dataset_visualization(request, pk):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def generate_report(request, pk):
+    from datetime import datetime
+    
     try:
         dataset = EquipmentDataset.objects.get(pk=pk)
     except EquipmentDataset.DoesNotExist:
         return Response({'error': 'Dataset not found'}, status=status.HTTP_404_NOT_FOUND)
     
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter)
-    styles = getSampleStyleSheet()
-    elements = []
+    try:
+        df = pd.read_csv(io.StringIO(dataset.csv_data))
+        
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=72, bottomMargin=72)
+        styles = getSampleStyleSheet()
+        elements = []
+        
+        elements.append(Paragraph("CHEMICAL EQUIPMENT ANALYSIS REPORT", styles['Title']))
+        elements.append(Spacer(1, 12))
+        
+        meta_data = [
+            ['Dataset ID', str(dataset.id)],
+            ['Filename', dataset.filename],
+            ['Upload Date', dataset.uploaded_at.astimezone().strftime('%Y-%m-%d %I:%M %p')],
+            ['Generated', datetime.now().strftime('%Y-%m-%d %I:%M %p')],
+            ['Total Records', str(dataset.total_count)]
+        ]
+        meta_table = Table(meta_data, colWidths=[120, 300])
+        meta_table.setStyle(TableStyle([
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ]))
+        elements.append(meta_table)
+        elements.append(Spacer(1, 24))
+        
+        elements.append(Paragraph("Summary Statistics", styles['Heading2']))
+        elements.append(Spacer(1, 8))
+        
+        stats_data = [
+            ['Parameter', 'Mean', 'Min', 'Max'],
+            ['Flowrate', f"{dataset.avg_flowrate:.2f}", f"{df['Flowrate'].min():.2f}", f"{df['Flowrate'].max():.2f}"],
+            ['Pressure', f"{dataset.avg_pressure:.2f}", f"{df['Pressure'].min():.2f}", f"{df['Pressure'].max():.2f}"],
+            ['Temperature', f"{dataset.avg_temperature:.2f}", f"{df['Temperature'].min():.2f}", f"{df['Temperature'].max():.2f}"]
+        ]
+        stats_table = Table(stats_data, colWidths=[120, 100, 100, 100])
+        stats_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#03045e')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#023e8a')),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#caf0f8')),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+        ]))
+        elements.append(stats_table)
+        elements.append(Spacer(1, 24))
+        
+        elements.append(Paragraph("Type Distribution", styles['Heading2']))
+        elements.append(Spacer(1, 8))
+        
+        type_data = [['Equipment Type', 'Count']] + [[k, str(v)] for k, v in dataset.type_distribution.items()]
+        type_table = Table(type_data, colWidths=[200, 100])
+        type_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#03045e')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#023e8a')),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#caf0f8')),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ]))
+        elements.append(type_table)
+        elements.append(Spacer(1, 24))
+        
+        elements.append(Paragraph("Complete Equipment Data", styles['Heading2']))
+        elements.append(Spacer(1, 12))
+        
+        data_rows = [['Equipment Name', 'Type', 'Flowrate', 'Pressure', 'Temperature']]
+        for _, row in df.iterrows():
+            data_rows.append([
+                str(row['Equipment Name']),
+                str(row['Type']),
+                f"{row['Flowrate']:.2f}",
+                f"{row['Pressure']:.2f}",
+                f"{row['Temperature']:.2f}"
+            ])
+        
+        data_table = Table(data_rows, colWidths=[90, 90, 80, 80, 90])
+        table_style = [
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#03045e')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#023e8a')),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ]
+        for i in range(1, len(data_rows)):
+            bg_color = colors.HexColor('#caf0f8') if i % 2 == 1 else colors.HexColor('#e0f7fa')
+            table_style.append(('BACKGROUND', (0, i), (-1, i), bg_color))
+        data_table.setStyle(TableStyle(table_style))
+        elements.append(data_table)
+        
+        def add_page_number(canvas, doc):
+            canvas.saveState()
+            canvas.setFont('Helvetica', 9)
+            canvas.setFillColor(colors.HexColor('#03045e'))
+            canvas.drawCentredString(letter[0]/2, 30, f"Page {doc.page}")
+            canvas.drawString(40, 30, "Chemical Equipment Analysis Report")
+            canvas.drawRightString(letter[0]-40, 30, datetime.now().strftime('%Y-%m-%d'))
+            canvas.restoreState()
+        
+        doc.build(elements, onFirstPage=add_page_number, onLaterPages=add_page_number)
+        buffer.seek(0)
+        
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="report_{dataset.id}.pdf"'
+        return response
+    except Exception as e:
+        import traceback
+        print(f"PDF Generation Error: {str(e)}")
+        traceback.print_exc()
+        return Response({'error': f'Report generation failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    elements.append(Paragraph("Chemical Equipment Dataset Report", styles['Title']))
-    elements.append(Spacer(1, 12))
-    elements.append(Paragraph(f"Dataset ID: {dataset.id}", styles['Normal']))
-    elements.append(Paragraph(f"Filename: {dataset.filename}", styles['Normal']))
-    elements.append(Paragraph(f"Uploaded At: {dataset.uploaded_at.astimezone().strftime('%Y-%m-%d %I:%M %p')}", styles['Normal']))
-    elements.append(Spacer(1, 12))
-
-    elements.append(Paragraph("Summary Statistics", styles['Heading2']))
-    elements.append(Paragraph(f"Total Count: {dataset.total_count}", styles['Normal']))
-    elements.append(Paragraph(f"Avg Flowrate: {dataset.avg_flowrate}", styles['Normal']))
-    elements.append(Paragraph(f"Avg Pressure: {dataset.avg_pressure}", styles['Normal']))
-    elements.append(Paragraph(f"Avg Temperature: {dataset.avg_temperature}", styles['Normal']))
-    elements.append(Spacer(1, 12))
-
-    elements.append(Paragraph("Type Distribution", styles['Heading2']))
-    table_data = [['Equipment Type', 'Count']] + [[k, str(v)] for k, v in dataset.type_distribution.items()]
-    table = Table(table_data)
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-    ]))
-    elements.append(table)
-
-    doc.build(elements)
-    buffer.seek(0)
-    
-    response = HttpResponse(buffer, content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="report_{dataset.id}.pdf"'
-    return response

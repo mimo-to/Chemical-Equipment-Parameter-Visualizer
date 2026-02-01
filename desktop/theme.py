@@ -130,6 +130,16 @@ QPushButton#refresh:hover {{
     background-color: {COLORS['card']};
     border-color: {COLORS['primary']};
 }}
+QLabel#storage {{
+    color: {COLORS['primary']};
+    font-size: 14px;
+    font-weight: bold;
+    padding: 8px 16px;
+    border: 1px solid {COLORS['border']};
+    border-radius: 4px;
+    background-color: rgba(0, 180, 216, 0.1);
+    letter-spacing: 2px;
+}}
 QTableWidget {{
     background-color: {COLORS['card']};
     border: 1px solid {COLORS['border']};
