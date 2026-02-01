@@ -1,138 +1,175 @@
 # Chemical Equipment Parameter Visualizer
 
-A full-stack application for visualizing and analyzing chemical equipment parameters (Flowrate, Pressure, Temperature). It features a secure backend, a modern web dashboard, and a native desktop application.
+A full-stack data visualization platform for chemical engineering applications. Upload CSV datasets containing equipment parameters and instantly generate interactive visualizations, statistical summaries, and downloadable PDF reports.
+
+Built for the FOSSEE Semester Internship 2026 screening project.
+
+---
+
+## Features
+
+- **CSV Upload & Validation** - Upload equipment data with automatic format validation
+- **Interactive Charts** - Pie charts for equipment type distribution, bar charts for parameter averages
+- **Statistical Analysis** - Calculate averages, min/max values for Flowrate, Pressure, and Temperature
+- **Dataset History** - Access your last 5 uploaded datasets
+- **PDF Reports** - Generate and download professional analysis reports
+- **Dual Frontend** - Modern web dashboard + native desktop application
+- **Token Authentication** - Secure API access with token-based auth
+
+---
 
 ## Tech Stack
 
-*   **Backend**: Django, Django REST Framework (DRF), Pandas, SQLite
-*   **Web Frontend**: React, Vite, Chart.js, Tailwind CSS
-*   **Desktop App**: PyQt5, Matplotlib
-*   **Database**: SQLite
+| Layer | Technology |
+|-------|------------|
+| **Backend** | Django 4.2, Django REST Framework, Pandas |
+| **Web Frontend** | React 18, Vite, Chart.js, Tailwind CSS |
+| **Desktop App** | PyQt5, Matplotlib |
+| **Database** | SQLite |
+| **PDF Generation** | ReportLab |
 
-## Repository Structure
+---
 
-*   `backend/` - Django project and API source code
-*   `web/` - React Web Application source code
-*   `desktop/` - PyQt5 Desktop Application source code
-*   `sample_equipment_data.csv` - Sample dataset for testing application features
+## Project Structure
 
-## Backend Setup
+```
+Chemical-Equipment-Parameter-Visualizer/
+├── backend/                 # Django REST API
+│   ├── api/                 # Core API app
+│   │   ├── views.py         # API endpoints
+│   │   ├── models.py        # Dataset model
+│   │   ├── validators.py    # CSV validation logic
+│   │   └── tests/           # Unit tests
+│   └── config/              # Django settings
+├── web/                     # React Web Application
+│   └── src/
+│       ├── components/      # React components
+│       └── App.jsx          # Main application
+├── desktop/                 # PyQt5 Desktop Application
+│   ├── main.py              # Entry point
+│   ├── main_window.py       # Main window
+│   ├── charts_widget.py     # Visualization widget
+│   └── theme.py             # Dark theme styling
+├── sample_equipment_data.csv # Sample dataset for testing
+└── README.md
+```
 
-1.  **Prerequisites**: Python 3.8 or higher
-2.  **Navigate to the backend directory**:
-    ```bash
-    cd backend
-    ```
-3.  **Create and activate a virtual environment**:
-    ```bash
-    python -m venv venv
-    
-    # Windows
-    venv\Scripts\activate
-    
-    # macOS/Linux
-    # source venv/bin/activate
-    ```
-4.  **Install dependencies**:
-    ```bash
-    pip install -r requirements.txt
-    ```
-5.  **Initialize the database**:
-    ```bash
-    python manage.py makemigrations
-    python manage.py migrate
-    ```
-6.  **Start the development server**:
-    ```bash
-    python manage.py runserver
-    ```
-    The server will start at `http://127.0.0.1:8000`.
+---
 
-## Creating Users
+## Quick Start
 
-The application requires authenticated users. Create a user account using Django's management command:
+### Prerequisites
+
+- Python 3.8+
+- Node.js 18+ (for web frontend)
+
+### 1. Backend Setup
 
 ```bash
 cd backend
+python -m venv venv
+
+# Windows
+venv\Scripts\activate
+
+# macOS/Linux
+source venv/bin/activate
+
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
+
+Server runs at `http://127.0.0.1:8000`
+
+### 2. Create User Account
+
+```bash
 python manage.py createsuperuser
 ```
 
-Follow the prompts to create a username and password. This account can be used to log in to both the web and desktop applications.
-
-**For Quick Testing (Demo Credentials):**
+**Quick Demo User:**
 ```bash
-python manage.py shell
-```
-```python
-from django.contrib.auth.models import User
-User.objects.create_user(username='demo', password='demo123')
-exit()
+python manage.py shell -c "from django.contrib.auth.models import User; User.objects.create_user('demo', password='demo123')"
 ```
 
-## Important Configuration Notes
+### 3. Web Frontend Setup
 
-**Backend URL:** Both the web and desktop applications are configured to connect to the backend at `http://127.0.0.1:8000`. Ensure the Django development server is running at this address before launching either frontend.
+```bash
+cd web
+npm install
+npm run dev
+```
 
-**CORS Configuration:** The backend is pre-configured to accept requests from `http://localhost:5173` (Vite default) and `http://localhost:3000`. If you change frontend ports, update `CORS_ALLOWED_ORIGINS` in `backend/config/settings.py`.
+Web app runs at `http://localhost:5173`
 
+### 4. Desktop App Setup
 
-## Web Frontend Setup
+```bash
+cd desktop
+pip install -r requirements.txt
+python main.py
+```
 
-1.  **Prerequisites**: Node.js 18+ (Recommended) or 16+
-2.  **Navigate to the web directory**:
-    ```bash
-    cd web
-    ```
-3.  **Install dependencies**:
-    ```bash
-    npm install
-    ```
-4.  **Run the development server**:
-    ```bash
-    npm run dev
-    ```
-    The application will be accessible at `http://localhost:5173`.
-
-## Desktop App Setup
-
-1.  **Prerequisites**: Python 3.8 or higher. Ensure the backend server is running first.
-2.  **Navigate to the desktop directory**:
-    ```bash
-    cd desktop
-    ```
-3.  **Install dependencies**:
-    ```bash
-    pip install -r requirements.txt
-    ```
-4.  **Run the application**:
-    ```bash
-    python main.py
-    ```
+---
 
 ## API Reference
 
-The following endpoints are available for integration:
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| `POST` | `/api/login/` | Get authentication token | No |
+| `POST` | `/api/upload/` | Upload CSV dataset | Token |
+| `GET` | `/api/history/` | List last 5 datasets | Token |
+| `GET` | `/api/history/<id>/` | Get dataset details | Token |
+| `GET` | `/api/report/<id>/` | Download PDF report | Token |
 
-| Method | Endpoint | Purpose | Authentication |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/login/` | Obtain Authentication Token | None |
-| `POST` | `/api/upload/` | Upload CSV & Parse Data | Token Required |
-| `GET` | `/api/history/` | Retrieve list of uploaded datasets | Token Required |
-| `GET` | `/api/report/<id>/`| Download Stats Report as PDF | Token Required |
+### CSV Format
 
-## Usage Instructions
+Required columns: `Equipment Name`, `Type`, `Flowrate`, `Pressure`, `Temperature`
 
-1.  **Start the Backend**: Run `python manage.py runserver` in the backend directory.
-2.  **Login**:
-    *   **Web Interface**: Open `http://localhost:5173`. You can create a new account or log in with existing credentials.
-    *   **Desktop Interface**: Run `python main.py` and enter your credentials.
-3.  **Upload Data**:
-    *   Use the `sample_equipment_data.csv` file provided in the root directory.
-    *   Click "Upload" to submit the file for processing.
-4.  **Analyze**:
-    *   The application will automatically generate charts (Type Distribution and Average Parameters).
-    *   Statistical summaries will be displayed on the dashboard.
-5.  **History & Reports**:
-    *   Navigate to the "History" section.
-    *   Select a previously uploaded dataset.
-    *   Click "Save PDF" or "Download Report" to export the analysis.
+```csv
+Equipment Name,Type,Flowrate,Pressure,Temperature
+Reactor-A,Vessel,120.5,5.2,110.0
+Pump-Main,Pump,500.0,10.0,40.0
+HeatEx-1,Heat Exchanger,250.0,3.5,85.0
+```
+
+---
+
+## Sample Data
+
+Use the included `sample_equipment_data.csv` with 16 equipment entries across 7 types:
+- Vessels, Pumps, Heat Exchangers, Columns, Compressors, Mixers, Separators
+
+---
+
+## Configuration Notes
+
+**Backend URL:** Both frontends connect to `http://127.0.0.1:8000`
+
+**CORS Origins:** Pre-configured for `localhost:5173` and `localhost:3000`. Update `CORS_ALLOWED_ORIGINS` in `backend/config/settings.py` if needed.
+
+---
+
+## Usage Guide
+
+1. **Start Backend** - Run Django server first
+2. **Login** - Use created credentials in web or desktop app
+3. **Upload** - Select the sample CSV or your own equipment data
+4. **Analyze** - View auto-generated charts and statistics
+5. **Export** - Download PDF report from History section
+
+---
+
+## Testing
+
+```bash
+cd backend
+python manage.py test api.tests
+```
+
+---
+
+## License
+
+This project was developed as part of the FOSSEE Semester Internship 2026 screening task.

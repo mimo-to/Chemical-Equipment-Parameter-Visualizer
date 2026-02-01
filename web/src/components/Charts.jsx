@@ -69,7 +69,19 @@ const Charts = ({ datasetId }) => {
                     {averages.labels.map((label, i) => (
                         <div key={label} className="stat-card">
                             <span className="stat-label">{label}</span>
-                            <span className="stat-value">{Number(averages.data[i]).toFixed(2)}</span>
+                            <div className="stat-content">
+                                <span className="stat-value">{Number(averages.data[i]).toFixed(2)}</span>
+                                <div className="stat-minmax">
+                                    <div className="minmax-box">
+                                        <span className="minmax-label">MIN</span>
+                                        <span className="minmax-value">{averages.min ? Number(averages.min[i]).toFixed(2) : '-'}</span>
+                                    </div>
+                                    <div className="minmax-box">
+                                        <span className="minmax-label">MAX</span>
+                                        <span className="minmax-value">{averages.max ? Number(averages.max[i]).toFixed(2) : '-'}</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     ))}
                 </div>

@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QGridLayout
 from PyQt5.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -20,6 +20,20 @@ class ChartsWidget(QWidget):
         title = QLabel("DATA VISUALIZATION")
         title.setObjectName("title")
         self.layout.addWidget(title)
+        
+        self.stats_container = QFrame()
+        self.stats_container.setObjectName("statsContainer")
+        self.stats_container.setStyleSheet(f"""
+            QFrame#statsContainer {{
+                background-color: transparent;
+                border: none;
+                padding: 8px;
+            }}
+        """)
+        self.stats_layout = QHBoxLayout(self.stats_container)
+        self.stats_layout.setSpacing(16)
+        self.stats_container.hide()
+        self.layout.addWidget(self.stats_container)
         
         self.loading_label = QLabel("Upload a dataset to see visualizations")
         self.loading_label.setObjectName("loading")
@@ -47,6 +61,11 @@ class ChartsWidget(QWidget):
             child = self.charts_layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
+        while self.stats_layout.count():
+            child = self.stats_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        self.stats_container.hide()
                 
     def on_success(self, data):
         self.loading_label.hide()
@@ -57,6 +76,23 @@ class ChartsWidget(QWidget):
         
     def render_charts(self, data):
         self.clear_charts()
+        
+        averages = data.get("averages", {})
+        if averages:
+            labels = averages.get("labels", [])
+            values = averages.get("data", [])
+            mins = averages.get("min", [])
+            maxs = averages.get("max", [])
+            
+            for i, label in enumerate(labels):
+                card = self.create_stat_card(
+                    label, 
+                    values[i] if i < len(values) else 0,
+                    mins[i] if i < len(mins) else None,
+                    maxs[i] if i < len(maxs) else None
+                )
+                self.stats_layout.addWidget(card)
+            self.stats_container.show()
         
         type_dist = data.get("type_distribution", {})
         if type_dist:
@@ -112,3 +148,54 @@ class ChartsWidget(QWidget):
                 
             fig.tight_layout()
             self.charts_layout.addWidget(FigureCanvas(fig))
+    
+    def create_stat_card(self, label, avg, min_val, max_val):
+        card = QFrame()
+        card.setFixedHeight(110)
+        card.setMinimumWidth(220)
+        card.setStyleSheet(f"""
+            QFrame {{
+                background-color: {COLORS['card']};
+                border: 1px solid {COLORS['border']};
+                border-radius: 6px;
+            }}
+            QLabel {{
+                border: none;
+            }}
+        """)
+        
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(16, 12, 16, 12)
+        layout.setSpacing(6)
+        
+        lbl = QLabel(label.upper())
+        lbl.setStyleSheet(f"color: {COLORS['muted']}; font-size: 12px; font-weight: bold; background: transparent;")
+        layout.addWidget(lbl)
+        
+        row = QHBoxLayout()
+        row.setSpacing(20)
+        
+        avg_lbl = QLabel(f"{avg:.2f}")
+        avg_lbl.setStyleSheet(f"color: {COLORS['success']}; font-size: 28px; font-weight: bold; background: transparent;")
+        row.addWidget(avg_lbl)
+        
+        row.addStretch()
+        
+        minmax = QVBoxLayout()
+        minmax.setSpacing(4)
+        
+        min_text = QLabel(f"MIN: {min_val:.2f}" if min_val is not None else "MIN: 0.00")
+        min_text.setStyleSheet(f"color: {COLORS['text']}; font-size: 16px; background: transparent;")
+        max_text = QLabel(f"MAX: {max_val:.2f}" if max_val is not None else "MAX: 0.00")
+        max_text.setStyleSheet(f"color: {COLORS['text']}; font-size: 16px; background: transparent;")
+        
+        minmax.addWidget(min_text)
+        minmax.addWidget(max_text)
+        row.addLayout(minmax)
+        
+        layout.addLayout(row)
+        layout.addStretch()
+        
+        return card
+
+

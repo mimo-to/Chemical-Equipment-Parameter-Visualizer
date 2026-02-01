@@ -109,6 +109,9 @@ def get_dataset_detail(request, pk):
 def get_dataset_visualization(request, pk):
     try:
         dataset = EquipmentDataset.objects.get(pk=pk)
+        
+        df = pd.read_csv(io.StringIO(dataset.csv_data))
+        
         return Response({
             'type_distribution': {
                 'labels': list(dataset.type_distribution.keys()),
@@ -116,7 +119,9 @@ def get_dataset_visualization(request, pk):
             },
             'averages': {
                 'labels': ['Flowrate', 'Pressure', 'Temperature'],
-                'data': [dataset.avg_flowrate, dataset.avg_pressure, dataset.avg_temperature]
+                'data': [dataset.avg_flowrate, dataset.avg_pressure, dataset.avg_temperature],
+                'min': [float(df['Flowrate'].min()), float(df['Pressure'].min()), float(df['Temperature'].min())],
+                'max': [float(df['Flowrate'].max()), float(df['Pressure'].max()), float(df['Temperature'].max())]
             }
         })
     except EquipmentDataset.DoesNotExist:

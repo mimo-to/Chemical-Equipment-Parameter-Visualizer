@@ -265,6 +265,44 @@ button {
   color: var(--success);
 }
 
+.stat-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stat-minmax {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.minmax-box {
+  background: rgba(0, 119, 182, 0.15);
+  border: 1px solid var(--secondary);
+  border-radius: 4px;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.minmax-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.minmax-value {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
 .alert {
   padding: 16px;
   border-radius: var(--radius);
