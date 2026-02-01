@@ -1,0 +1,16 @@
+﻿Equipment Name,Type,Flowrate,Pressure,Temperature
+Reactor-C,Vessel,130.0,5.4,108.5
+HeatEx-3,Heat Exchanger,260.2,3.4,86.0
+Pump-Backup,Pump,210.5,8.7,39.0
+Distillation-Col2,Column,85.5,1.3,118.0
+Absorber-2,Column,90.0,1.4,62.0
+Compressor-C,Compressor,295.0,15.2,88.5
+Tank-Buffer,Vessel,0.0,1.0,26.0
+Mixer-3,Mixer,48.0,1.05,29.5
+Separator-3,Separator,185.0,4.1,56.0
+Filter-1,Filter,160.0,2.8,45.0
+Cooler-A,Cooler,220.0,2.5,35.0
+Boiler-1,Boiler,140.0,6.0,150.0
+Fan-Exhaust,Fan,400.0,0.5,70.0
+Valve-Control,Valve,300.0,9.0,50.0
+Agitator-Main,Agitator,60.0,1.2,40.0

@@ -6,6 +6,7 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from upload_widget import UploadWidget
 from charts_widget import ChartsWidget
 from history_widget import HistoryWidget
+from compare_widget import CompareWidget
 from theme import COLORS
 
 HEADER_STYLE = f"""
@@ -136,6 +137,9 @@ class MainWindow(QMainWindow):
         self.history_widget = HistoryWidget(self.token)
         self.tabs.addTab(self.history_widget, "EXPERIMENT LOG")
         
+        self.compare_widget = CompareWidget(self.token)
+        self.tabs.addTab(self.compare_widget, "COMPARE")
+        
         main_layout.addWidget(self.tabs)
         self.setCentralWidget(central)
         
@@ -143,6 +147,7 @@ class MainWindow(QMainWindow):
         self.tabs.setTabEnabled(1, True)
         self.charts_widget.load_data(dataset_id)
         self.history_widget.refresh()
+        self.compare_widget.refresh()
         
     def handle_logout(self):
         self.logout_requested.emit()

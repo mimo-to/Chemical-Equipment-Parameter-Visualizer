@@ -168,3 +168,29 @@ class DownloadWorker(QThread):
             self.error.emit(f"Connection error: {str(e)}")
         except Exception as e:
             self.error.emit(str(e))
+
+
+class CompareWorker(QThread):
+    success = pyqtSignal(dict)
+    error = pyqtSignal(str)
+
+    def __init__(self, dataset1_id, dataset2_id, token):
+        super().__init__()
+        self.dataset1_id = dataset1_id
+        self.dataset2_id = dataset2_id
+        self.token = token
+
+    def run(self):
+        try:
+            response = requests.post(
+                f"{API_BASE}/api/compare/",
+                json={"dataset1": self.dataset1_id, "dataset2": self.dataset2_id},
+                headers={"Authorization": f"Token {self.token}"},
+                timeout=30
+            )
+            if response.status_code == 200:
+                self.success.emit(response.json())
+            else:
+                self.error.emit(response.json().get("error", "Comparison failed"))
+        except requests.exceptions.RequestException as e:
+            self.error.emit(f"Connection error: {str(e)}")

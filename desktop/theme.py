@@ -200,3 +200,67 @@ QLabel#loading {{
     padding: 48px;
 }}
 """
+
+COMPARE_THEME = BASE_THEME + f"""
+QLabel#loading {{
+    color: {COLORS['primary']};
+    font-size: 16px;
+    padding: 24px;
+}}
+QLabel#error {{
+    color: {COLORS['error']};
+    font-size: 15px;
+    padding: 12px;
+}}
+QComboBox {{
+    background-color: {COLORS['card']};
+    border: 2px solid {COLORS['border']};
+    border-radius: 4px;
+    padding: 10px 16px;
+    color: {COLORS['text']};
+    font-size: 14px;
+    min-width: 200px;
+}}
+QComboBox:hover {{
+    border-color: {COLORS['primary']};
+}}
+QComboBox::drop-down {{
+    border: none;
+    padding-right: 10px;
+}}
+QComboBox QAbstractItemView {{
+    background-color: {COLORS['card']};
+    border: 2px solid {COLORS['border']};
+    selection-background-color: {COLORS['primary']};
+    selection-color: {COLORS['background']};
+}}
+QLabel#vs {{
+    color: {COLORS['warning']};
+    font-size: 18px;
+    font-weight: bold;
+    padding: 0 12px;
+}}
+QLabel#diff-label {{
+    color: {COLORS['muted']};
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}}
+QLabel#diff-positive {{
+    color: {COLORS['success']};
+    font-size: 20px;
+    font-weight: bold;
+}}
+QLabel#diff-negative {{
+    color: {COLORS['error']};
+    font-size: 20px;
+    font-weight: bold;
+}}
+QFrame#diff-card {{
+    background-color: {COLORS['card']};
+    border: 1px solid {COLORS['border']};
+    border-radius: 4px;
+    padding: 16px;
+}}
+"""
+

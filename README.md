@@ -13,6 +13,7 @@ A full-stack data visualization platform for chemical engineering applications. 
 - **CSV Upload & Validation** - Upload equipment data with automatic format validation
 - **Interactive Charts** - Pie charts for equipment type distribution, bar charts for parameter averages
 - **Statistical Analysis** - Calculate averages, min/max values for Flowrate, Pressure, and Temperature
+- **Dataset Comparison** - Compare two datasets side-by-side with difference analysis
 - **Dataset History** - Access your last 5 uploaded datasets
 - **PDF Reports** - Generate and download professional analysis reports
 - **Dual Frontend** - Modern web dashboard + native desktop application
@@ -45,14 +46,17 @@ Chemical-Equipment-Parameter-Visualizer/
 │   └── config/              # Django settings
 ├── web/                     # React Web Application
 │   └── src/
-│       ├── components/      # React components
+│       ├── components/      # React components 
 │       └── App.jsx          # Main application
 ├── desktop/                 # PyQt5 Desktop Application
 │   ├── main.py              # Entry point
 │   ├── main_window.py       # Main window
 │   ├── charts_widget.py     # Visualization widget
+│   ├── compare_widget.py    # Dataset comparison widget
 │   └── theme.py             # Dark theme styling
-├── sample_equipment_data.csv # Sample dataset for testing
+├── sample_equipment_data.csv   # Sample dataset
+├── sample_equipment_data_1.csv # Sample for comparison (Set A)
+├── sample_equipment_data_2.csv # Sample for comparison (Set B)
 └── README.md
 ```
 
@@ -141,8 +145,24 @@ HeatEx-1,Heat Exchanger,250.0,3.5,85.0
 
 ## Sample Data
 
-Use the included `sample_equipment_data.csv` with 16 equipment entries across 7 types:
+### Basic Testing
+Use `sample_equipment_data.csv` with 16 equipment entries across 7 types:
 - Vessels, Pumps, Heat Exchangers, Columns, Compressors, Mixers, Separators
+
+### Comparison Testing
+Two sample files are included to test the **Dataset Comparison** feature:
+
+| File | Equipment Count | Types |
+|------|-----------------|-------|
+| `sample_equipment_data_1.csv` | 16 entries | Vessels, Pumps, Heat Exchangers, Columns, Compressors, Mixers, Separators |
+| `sample_equipment_data_2.csv` | 15 entries | Vessels, Pumps, Heat Exchangers, Columns, Compressors, Mixers, Separators, Filters, Coolers, Boilers, Fans, Valves, Agitators |
+
+**To test comparison:**
+1. Upload both sample files via the Data Input tab
+2. Go to the **Compare** tab
+3. Select `sample_equipment_data_1.csv` as Dataset A
+4. Select `sample_equipment_data_2.csv` as Dataset B
+5. Click **Compare** to see the parameter differences
 
 ---
 
@@ -160,7 +180,8 @@ Use the included `sample_equipment_data.csv` with 16 equipment entries across 7 
 2. **Login** - Use created credentials in web or desktop app
 3. **Upload** - Select the sample CSV or your own equipment data
 4. **Analyze** - View auto-generated charts and statistics
-5. **Export** - Download PDF report from History section
+5. **Compare** - Upload multiple datasets and compare them in the Compare tab
+6. **Export** - Download PDF report from History section
 
 ---
 

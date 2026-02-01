@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Upload from './Upload';
 import Charts from './Charts';
 import History from './History';
+import Compare from './Compare';
 import ErrorBoundary from './ErrorBoundary';
 import { useAuth } from '../context/AuthContext';
 
@@ -40,6 +41,12 @@ const Dashboard = () => {
                         Visualization
                     </button>
                     <button
+                        onClick={() => setActiveTab('compare')}
+                        className={`tab-btn ${activeTab === 'compare' ? 'active' : ''}`}
+                    >
+                        Compare
+                    </button>
+                    <button
                         onClick={() => setActiveTab('history')}
                         className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
                     >
@@ -50,6 +57,7 @@ const Dashboard = () => {
                 <div className="content-area">
                     {activeTab === 'upload' && <Upload onUploadSuccess={handleUploadSuccess} />}
                     {activeTab === 'charts' && <Charts datasetId={datasetId} />}
+                    {activeTab === 'compare' && <Compare />}
                     {activeTab === 'history' && <History refreshTrigger={datasetId} />}
                 </div>
             </div>
