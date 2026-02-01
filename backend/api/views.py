@@ -11,18 +11,19 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
+from datetime import datetime
 import pandas as pd
 import io
 
 from .models import EquipmentDataset
 from .serializers import EquipmentDatasetSerializer
 from .validators import validate_file_size, validate_file_extension, validate_csv_structure, validate_csv_content
+from .constants import HISTORY_LIMIT
 
 
 @api_view(['POST'])
 def login(request):
-    from django.utils.html import escape
-    username = escape(request.data.get('username', '').strip())
+    username = request.data.get('username', '').strip()
     password = request.data.get('password', '')
     
     if not username or not password:
@@ -77,8 +78,8 @@ def upload(request):
             csv_data=csv_content
         )
         
-        if EquipmentDataset.objects.count() > 5:
-            oldest_ids = list(EquipmentDataset.objects.order_by('uploaded_at', 'id').values_list('id', flat=True)[:EquipmentDataset.objects.count() - 5])
+        if EquipmentDataset.objects.count() > HISTORY_LIMIT:
+            oldest_ids = list(EquipmentDataset.objects.order_by('uploaded_at', 'id').values_list('id', flat=True)[:EquipmentDataset.objects.count() - HISTORY_LIMIT])
             EquipmentDataset.objects.filter(id__in=oldest_ids).delete()
     
     return Response(EquipmentDatasetSerializer(dataset).data, status=status.HTTP_201_CREATED)
@@ -88,8 +89,35 @@ def upload(request):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def history(request):
-    datasets = EquipmentDataset.objects.order_by('-uploaded_at', '-id')[:5]
+    datasets = EquipmentDataset.objects.order_by('-uploaded_at', '-id')[:HISTORY_LIMIT]
     return Response(EquipmentDatasetSerializer(datasets, many=True).data)
+
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def compare_datasets(request):
+    id1 = request.data.get('dataset1')
+    id2 = request.data.get('dataset2')
+    
+    if not id1 or not id2:
+        return Response({'error': 'Both dataset1 and dataset2 IDs required'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        ds1 = EquipmentDataset.objects.get(pk=id1)
+        ds2 = EquipmentDataset.objects.get(pk=id2)
+    except EquipmentDataset.DoesNotExist:
+        return Response({'error': 'One or both datasets not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    return Response({
+        'dataset1': EquipmentDatasetSerializer(ds1).data,
+        'dataset2': EquipmentDatasetSerializer(ds2).data,
+        'comparison': {
+            'flowrate_diff': round(ds1.avg_flowrate - ds2.avg_flowrate, 2),
+            'pressure_diff': round(ds1.avg_pressure - ds2.avg_pressure, 2),
+            'temperature_diff': round(ds1.avg_temperature - ds2.avg_temperature, 2),
+        }
+    })
 
 
 @api_view(['GET'])
@@ -132,8 +160,6 @@ def get_dataset_visualization(request, pk):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def generate_report(request, pk):
-    from datetime import datetime
-    
     try:
         dataset = EquipmentDataset.objects.get(pk=pk)
     except EquipmentDataset.DoesNotExist:

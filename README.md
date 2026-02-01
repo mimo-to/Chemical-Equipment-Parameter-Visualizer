@@ -1,8 +1,10 @@
 # Chemical Equipment Parameter Visualizer
 
-A full-stack data visualization platform for chemical engineering applications. Upload CSV datasets containing equipment parameters and instantly generate interactive visualizations, statistical summaries, and downloadable PDF reports.
+[![Tests](https://github.com/mimo-to/Chemical-Equipment-Parameter-Visualizer/actions/workflows/test.yml/badge.svg)](https://github.com/mimo-to/Chemical-Equipment-Parameter-Visualizer/actions)
 
-Built for the FOSSEE Semester Internship 2026 screening project.
+> **Developed for FOSSEE Semester Internship 2026**
+
+A full-stack data visualization platform for chemical engineering applications. Upload CSV datasets containing equipment parameters and instantly generate interactive visualizations, statistical summaries, and downloadable PDF reports.
 
 ---
 
@@ -120,7 +122,8 @@ python main.py
 | `POST` | `/api/login/` | Get authentication token | No |
 | `POST` | `/api/upload/` | Upload CSV dataset | Token |
 | `GET` | `/api/history/` | List last 5 datasets | Token |
-| `GET` | `/api/history/<id>/` | Get dataset details | Token |
+| `GET` | `/api/dataset/<id>/` | Get dataset details | Token |
+| `POST` | `/api/compare/` | Compare two datasets | Token |
 | `GET` | `/api/report/<id>/` | Download PDF report | Token |
 
 ### CSV Format
@@ -167,6 +170,15 @@ Use the included `sample_equipment_data.csv` with 16 equipment entries across 7 
 cd backend
 python manage.py test api.tests
 ```
+
+---
+
+## Troubleshooting
+
+- **Port 8000 busy?** `netstat -ano | findstr :8000` then kill the process
+- **Module not found?** Reactivate venv: `venv\Scripts\activate`
+- **CORS errors?** Check backend running on `127.0.0.1:8000`
+- **Login fails?** Create user with `python manage.py createsuperuser`
 
 ---
 
