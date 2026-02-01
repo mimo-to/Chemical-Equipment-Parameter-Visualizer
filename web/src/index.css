@@ -417,3 +417,90 @@ button {
 }
 @keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
+.drop-zone {
+  border: 2px dashed var(--secondary);
+  border-radius: var(--radius);
+  padding: 40px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+  margin-bottom: 16px;
+}
+.drop-zone:hover { border-color: var(--primary); background: rgba(0, 180, 216, 0.04); }
+.drop-zone.drag-over { border-color: var(--primary); background: rgba(0, 180, 216, 0.1); border-style: solid; }
+.drop-zone.has-file { border-color: var(--success); background: rgba(6, 255, 165, 0.05); }
+
+.drop-zone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+.drop-zone.has-file .drop-zone-content { flex-direction: row; justify-content: center; }
+.drop-icon { font-size: 2rem; opacity: 0.6; }
+.file-icon { font-size: 1.5rem; }
+.file-name { color: var(--text-main); font-weight: 600; }
+.file-size { color: var(--text-muted); font-size: 0.75rem; }
+
+.preview-section {
+  background: var(--bg-card);
+  border: 1px solid var(--secondary);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.preview-header h4 {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.preview-valid {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--success);
+  background: rgba(6, 255, 165, 0.1);
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+.preview-table { font-size: 0.8rem; }
+.preview-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--secondary);
+}
+.btn-secondary {
+  background: var(--secondary);
+  color: var(--text-main);
+  border: 1px solid var(--secondary);
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+}
+.btn-secondary:hover { background: transparent; border-color: var(--text-muted); }
+
+.error-help {
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  opacity: 0.8;
+}

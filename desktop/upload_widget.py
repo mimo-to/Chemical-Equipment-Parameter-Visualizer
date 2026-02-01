@@ -1,10 +1,21 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
-    QFileDialog, QGroupBox, QFrame
+    QFileDialog, QGroupBox, QFrame, QToolTip
 )
 from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtGui import QCursor
 from theme import UPLOAD_THEME
 from worker import UploadWorker
+
+ERROR_TIPS = {
+    'file too large': 'Try splitting your data into smaller files or removing unnecessary rows.',
+    'invalid file type': 'Save your spreadsheet as CSV (comma-separated values).',
+    'missing columns': 'Required: Equipment Name, Type, Flowrate, Pressure, Temperature.',
+    'unexpected columns': 'Remove extra columns. Only the 5 required columns are allowed.',
+    'empty': 'Add data rows below the header line. See sample_equipment_data.csv.',
+    'invalid numeric': 'Ensure values are numbers (e.g., 10.5). Remove text or special characters.',
+    'connection error': 'Check your internet connection and try again.',
+}
 
 
 class UploadWidget(QWidget):
@@ -46,10 +57,32 @@ class UploadWidget(QWidget):
         
         layout.addLayout(file_row)
         
+        self.error_frame = QFrame()
+        self.error_frame.setObjectName("error-frame")
+        self.error_frame.setStyleSheet("""
+            QFrame#error-frame {
+                background: rgba(214, 40, 40, 0.15);
+                border: 1px solid #d62828;
+                border-radius: 6px;
+                padding: 8px;
+            }
+        """)
+        error_layout = QVBoxLayout(self.error_frame)
+        error_layout.setContentsMargins(12, 12, 12, 12)
+        error_layout.setSpacing(8)
+        
         self.error_label = QLabel("")
-        self.error_label.setStyleSheet("color: #ff6b6b; font-size: 14px; padding: 12px;")
-        self.error_label.hide()
-        layout.addWidget(self.error_label)
+        self.error_label.setStyleSheet("color: #ff6b6b; font-size: 14px; font-weight: bold;")
+        self.error_label.setWordWrap(True)
+        error_layout.addWidget(self.error_label)
+        
+        self.error_tip_label = QLabel("")
+        self.error_tip_label.setStyleSheet("color: #a0a0a0; font-size: 12px;")
+        self.error_tip_label.setWordWrap(True)
+        error_layout.addWidget(self.error_tip_label)
+        
+        self.error_frame.hide()
+        layout.addWidget(self.error_frame)
         
         self.stats_group = QGroupBox("ANALYSIS RESULTS")
         self.stats_group.hide()
@@ -98,14 +131,14 @@ class UploadWidget(QWidget):
             self.filepath = filepath
             self.file_label.setText(filepath.replace("\\", "/").split("/")[-1])
             self.upload_btn.setEnabled(True)
-            self.error_label.hide()
+            self.error_frame.hide()
             
     def upload_file(self):
         if not self.filepath:
             return
             
         self.set_loading(True)
-        self.error_label.hide()
+        self.error_frame.hide()
         self.stats_group.hide()
         
         self.worker = UploadWorker(self.filepath, self.token)
@@ -127,8 +160,18 @@ class UploadWidget(QWidget):
             
     def on_error(self, message):
         self.error_label.setText(f"Error: {message}")
-        self.error_label.show()
+        tip = self._get_error_tip(message)
+        self.error_tip_label.setText(f"💡 {tip}" if tip else "")
+        self.error_tip_label.setVisible(bool(tip))
+        self.error_frame.show()
         self.set_loading(False)
+    
+    def _get_error_tip(self, message):
+        msg_lower = message.lower()
+        for key, tip in ERROR_TIPS.items():
+            if key in msg_lower:
+                return tip
+        return "Check your CSV format matches sample_equipment_data.csv"
         
     def set_loading(self, loading):
         self.browse_btn.setEnabled(not loading)

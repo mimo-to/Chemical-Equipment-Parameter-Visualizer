@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QTableWidget, QTableWidgetItem,
-    QPushButton, QHeaderView, QHBoxLayout, QFileDialog
+    QPushButton, QHeaderView, QHBoxLayout, QFileDialog, QMessageBox
 )
 from PyQt5.QtCore import Qt
 from datetime import datetime
@@ -145,6 +145,14 @@ class HistoryWidget(QWidget):
     def on_download_success(self, filepath):
         self.downloading_id = None
         self.update_buttons()
+        
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Download Complete")
+        msg.setText("Report downloaded successfully!")
+        msg.setInformativeText(f"Saved to: {filepath}")
+        msg.setIcon(QMessageBox.Information)
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
         
     def on_download_error(self, message):
         self.downloading_id = None
