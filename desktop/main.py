@@ -2,9 +2,11 @@ import sys
 from PyQt5.QtWidgets import QApplication, QDialog
 from main_window import MainWindow
 from login_dialog import LoginDialog
+from logger import setup_logging
 
 
 def main():
+    setup_logging()
     app = QApplication(sys.argv)
     
     while True:
@@ -28,3 +30,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

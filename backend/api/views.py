@@ -21,8 +21,9 @@ from .validators import validate_file_size, validate_file_extension, validate_cs
 
 @api_view(['POST'])
 def login(request):
-    username = request.data.get('username')
-    password = request.data.get('password')
+    from django.utils.html import escape
+    username = escape(request.data.get('username', '').strip())
+    password = request.data.get('password', '')
     
     if not username or not password:
         return Response({'error': 'Username and password required'}, status=status.HTTP_400_BAD_REQUEST)
