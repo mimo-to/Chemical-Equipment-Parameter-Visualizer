@@ -194,43 +194,42 @@ class CompareWidget(QWidget):
         
         layout.addSpacing(8)
         
-        selector_layout = QHBoxLayout()
-        selector_layout.setSpacing(0)
+        selector_layout = QGridLayout()
+        selector_layout.setHorizontalSpacing(16)
+        selector_layout.setVerticalSpacing(8)
         
-        ds1_container = QVBoxLayout()
-        ds1_container.setSpacing(6)
+        # Dataset A
         ds1_label = QLabel("DATASET A")
         ds1_label.setObjectName("card-title")
-        ds1_container.addWidget(ds1_label)
-        self.combo1 = QComboBox()
-        ds1_container.addWidget(self.combo1)
-        selector_layout.addLayout(ds1_container)
+        selector_layout.addWidget(ds1_label, 0, 0)
         
+        self.combo1 = QComboBox()
+        selector_layout.addWidget(self.combo1, 1, 0)
+        
+        # VS Label
         vs_label = QLabel("VS")
         vs_label.setObjectName("vs")
         vs_label.setAlignment(Qt.AlignCenter)
-        selector_layout.addWidget(vs_label)
+        selector_layout.addWidget(vs_label, 1, 1)
         
-        ds2_container = QVBoxLayout()
-        ds2_container.setSpacing(6)
+        # Dataset B
         ds2_label = QLabel("DATASET B")
         ds2_label.setObjectName("card-title")
-        ds2_container.addWidget(ds2_label)
+        selector_layout.addWidget(ds2_label, 0, 2)
+        
         self.combo2 = QComboBox()
-        ds2_container.addWidget(self.combo2)
-        selector_layout.addLayout(ds2_container)
+        selector_layout.addWidget(self.combo2, 1, 2)
         
-        selector_layout.addSpacing(24)
-        
-        btn_container = QVBoxLayout()
-        btn_container.addSpacing(18)
+      
         self.compare_btn = QPushButton("COMPARE")
         self.compare_btn.setObjectName("compare")
+        self.compare_btn.setCursor(Qt.PointingHandCursor)
         self.compare_btn.clicked.connect(self.run_comparison)
-        btn_container.addWidget(self.compare_btn)
-        selector_layout.addLayout(btn_container)
+        selector_layout.addWidget(self.compare_btn, 1, 3)
         
-        selector_layout.addStretch()
+       
+        selector_layout.setColumnStretch(4, 1)
+        
         layout.addLayout(selector_layout)
         
         self.loading_label = QLabel("Loading datasets...")

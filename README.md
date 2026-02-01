@@ -54,6 +54,8 @@ Chemical-Equipment-Parameter-Visualizer/
 │   ├── charts_widget.py     # Visualization widget
 │   ├── compare_widget.py    # Dataset comparison widget
 │   └── theme.py             # Dark theme styling
+├── desktop_release/         # Desktop App Build Artifacts
+│   └── README_DESKTOP.txt   # Instructions for running the compiled app
 ├── sample_equipment_data.csv   # Sample dataset
 ├── sample_equipment_data_1.csv # Sample for comparison (Set A)
 ├── sample_equipment_data_2.csv # Sample for comparison (Set B)
@@ -109,13 +111,26 @@ npm run dev
 
 Web app runs at `http://localhost:5173`
 
-### 4. Desktop App Setup
+### 4. Desktop App Setup (Development)
 
 ```bash
 cd desktop
 pip install -r requirements.txt
 python main.py
 ```
+
+### 5. Desktop App (Standalone Release)
+
+A standalone Windows executable is available for users who do not want to set up the Python environment.
+
+**📥 [Download Latest Release](https://github.com/mimo-to/Chemical-Equipment-Parameter-Visualizer/releases)**
+
+**Installation & Usage:**
+1. Ensure the **Backend Server** is running (`http://127.0.0.1:8000`).
+2. Download `Chemical_Equipment_Visualizer_Desktop_Windows.zip` from the Releases page.
+3. Extract the ZIP file.
+4. Run `Chemical_Equipment_Visualizer_Desktop.exe`.
+5. Login with your existing account credentials.
 
 ---
 
