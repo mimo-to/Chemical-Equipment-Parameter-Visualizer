@@ -21,6 +21,10 @@ Visualizes chemical equipment data from CSV files.
 
 **Live Demo:** [Link to Deployed Application](https://chemical-equipment-parameter-visual-nu.vercel.app)
 
+data persistence on the live demo is **ephemeral** (resets on restart) due to free tier limitations.
+
+👉 **[Read the Full Deployment Guide](project_documentation/DEPLOYMENT_GUIDE.md)** for instructions on setting up production, persistent storage, and environment variables.
+
 ---
 
 ## Tech Stack

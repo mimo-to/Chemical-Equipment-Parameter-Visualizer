@@ -24,6 +24,7 @@ from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def health_check(request):
     return Response({'status': 'ok'}, status=status.HTTP_200_OK)
 
@@ -160,7 +161,16 @@ def compare_datasets(request):
 def get_dataset_detail(request, pk):
     try:
         dataset = EquipmentDataset.objects.get(pk=pk, user=request.user)
-        return Response(EquipmentDatasetSerializer(dataset).data)
+        
+        return Response({
+            'total_count': dataset.total_count,
+            'averages': {
+                'flowrate': dataset.avg_flowrate,
+                'pressure': dataset.avg_pressure,
+                'temperature': dataset.avg_temperature
+            },
+            'type_distribution': dataset.type_distribution
+        })
     except EquipmentDataset.DoesNotExist:
         return Response({'error': 'Dataset not found'}, status=status.HTTP_404_NOT_FOUND)
 
