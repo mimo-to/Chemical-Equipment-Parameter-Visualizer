@@ -44,8 +44,7 @@ We prioritized **reliability, consistency, and user experience** in our engineer
 In the interest of transparency, the current V1.0 release has the following constraints:
 *   **File Size:** Optimized for CSV files under 10MB to ensure sub-second response times on standard concurrent requests.
 *   **Concurrency:** Large simultaneous uploads are queue-bound by the Gunicorn worker count (default: 4).
-*   **Authentication:** Utilizes local database authentication. OAuth (Google/GitHub) integration is planned for V2.0.
-
+*   **Authentication:** Utilizes local database authentication. 
 ---
 
 ## 🚀 Quick Start
