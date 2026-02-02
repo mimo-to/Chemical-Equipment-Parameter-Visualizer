@@ -19,6 +19,12 @@ from .models import EquipmentDataset
 from .serializers import EquipmentDatasetSerializer
 from .validators import validate_file_size, validate_file_extension, validate_csv_structure, validate_csv_content
 from .constants import HISTORY_LIMIT
+from django_ratelimit.decorators import ratelimit
+from django.utils.decorators import method_decorator
+
+@api_view(['GET'])
+def health_check(request):
+    return Response({'status': 'ok'}, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -62,6 +68,7 @@ def register(request):
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
+@ratelimit(key='user', rate='10/m', block=True)
 def upload(request):
     if 'file' not in request.FILES:
         return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
