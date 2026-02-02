@@ -48,4 +48,5 @@ dist-ssr
 
 # Build artifacts
 *.exe
+!web/public/*.exe
 *.zip
