@@ -1,229 +1,122 @@
-# Chemical Equipment Visualizer
+# Chemical Equipment Parameter Visualizer
 
-Screening task submission for FOSSEE Internship 2026.
+**A full-stack analytical platform for visualizing and comparing chemical equipment data.**
 
-Visualizes chemical equipment data from CSV files.
-
----
-
-## Features
-
-- **CSV Upload & Validation** - Upload equipment data with automatic format validation
-- **Interactive Charts** - Pie charts for equipment type distribution, bar charts for parameter averages
-- **Statistical Analysis** - Calculate averages, min/max values for Flowrate, Pressure, and Temperature
-- **Dataset Comparison** - Compare two datasets side-by-side with difference analysis
-- **Dataset History** - Access your last 5 uploaded datasets
-- **PDF Reports** - Generate and download professional analysis reports
-- **Dual Frontend** - Modern web dashboard + native desktop application
-- **Token Authentication** - Secure API access with token-based auth
-
-## Deployment
-
-**Live Demo:** [Link to Deployed Application](https://chemical-equipment-parameter-visual-nu.vercel.app)
-
-data persistence on the live demo is **ephemeral** (resets on restart) due to free tier limitations.
-
-👉 **[Read the Full Deployment Guide](project_documentation/DEPLOYMENT_GUIDE.md)** for instructions on setting up production, persistent storage, and environment variables.
+> 🚀 **Live Demo:** [chemical-equipment-parameter-visual-nu.vercel.app](https://chemical-equipment-parameter-visual-nu.vercel.app)
+> _(Note: Live demo uses ephemeral storage; data resets on restart.)_
 
 ---
 
-## Tech Stack
+## 🏛️ Architecture Overview
 
-| Layer | Technology |
-|-------|------------|
-| **Backend** | Django 4.2, Django REST Framework, Pandas |
-| **Web Frontend** | React 18, Vite, Chart.js, Tailwind CSS |
-| **Desktop App** | PyQt5, Matplotlib |
-| **Database** | SQLite |
-| **PDF Generation** | ReportLab |
+This project implements a **stateless, token-based REST API** architecture designed for scalability and clear separation of concerns.
 
----
-
-## Project Structure
-
-```
-Chemical-Equipment-Parameter-Visualizer/
-├── backend/                 # Django REST API
-│   ├── api/                 # Core API app
-│   │   ├── views.py         # API endpoints
-│   │   ├── models.py        # Dataset model
-│   │   ├── validators.py    # CSV validation logic
-│   │   └── tests/           # Unit tests
-│   └── config/              # Django settings
-├── web/                     # React Web Application
-│   └── src/
-│       ├── components/      # React components 
-│       └── App.jsx          # Main application
-├── desktop/                 # PyQt5 Desktop Application
-│   ├── main.py              # Entry point
-│   ├── main_window.py       # Main window
-│   ├── charts_widget.py     # Visualization widget
-│   ├── compare_widget.py    # Dataset comparison widget
-│   └── theme.py             # Dark theme styling
-├── desktop_release/         # Desktop App Build Artifacts
-│   └── README_DESKTOP.txt   # Instructions for running the compiled app
-├── sample_equipment_data.csv   # Sample dataset
-├── sample_equipment_data_1.csv # Sample for comparison (Set A)
-├── sample_equipment_data_2.csv # Sample for comparison (Set B)
-└── README.md
+```mermaid
+graph TD
+    Client[Web & Desktop Clients] -->|REST API + Token| API[Django REST Framework]
+    API -->|Validation & Logic| Service[Data Service]
+    Service -->|Storage| DB[(SQLite / PostgreSQL)]
+    Service -->|Analysis| Pandas[Pandas Engine]
+    Service -->|Visualization| ReportLab[PDF Generation]
 ```
 
+### Core Flow
+1.  **Ingestion:** User uploads CSV → Backend validates schema & content type.
+2.  **Processing:** Pandas processes raw data to compute statistical averages and distributions.
+3.  **Storage:** Metadata and summary stats stored in DB; Raw JSON/CSV cached for retrieval.
+4.  **Consumption:** Frontend requests JSON for interactive charts or Binary PDF for reporting.
+
 ---
 
-## Quick Start
+## 🛠️ Design Decisions
+
+We prioritized **reliability, consistency, and user experience** in our engineering choices:
+
+*   **Server-Side Validation:** All CSV parsing and validation happens on the backend (Pandas) rather than the client. This ensures data consistency regardless of whether the upload comes from the Web App, Desktop App, or direct API calls.
+*   **Stateless Authentication:** Token-based Auth (DRF) allows the backend to serve both React (Web) and PyQt5 (Desktop) clients uniformly without session management complexity.
+*   **Storage Optimization:** A "Last-5" dataset retention policy is enforced per user. This prevents storage bloat while keeping recent history available for comparison, optimizing for the constraints of a demo environment.
+*   **SQLite Database:** Chosen for development simplicity and ease of local replication. The Django ORM allows seamless switching to PostgreSQL for production (as configured in `settings.py`).
+
+---
+
+## ⚠️ Known Limitations
+
+In the interest of transparency, the current V1.0 release has the following constraints:
+*   **File Size:** Optimized for CSV files under 10MB to ensure sub-second response times on standard concurrent requests.
+*   **Concurrency:** Large simultaneous uploads are queue-bound by the Gunicorn worker count (default: 4).
+*   **Authentication:** Utilizes local database authentication. OAuth (Google/GitHub) integration is planned for V2.0.
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
-
-- Python 3.8+
-- Node.js 18+ (for web frontend)
+*   Python 3.8+
+*   Node.js 18+
 
 ### 1. Backend Setup
-
 ```bash
 cd backend
 python -m venv venv
-
-# Windows
-venv\Scripts\activate
-
-# macOS/Linux
-source venv/bin/activate
-
+# Windows: venv\Scripts\activate | Mac/Linux: source venv/bin/activate
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
 ```
 
-Server runs at `http://127.0.0.1:8000`
-
-### 2. Create User Account
-
-```bash
-python manage.py createsuperuser
-```
-
-**Quick Demo User:**
-```bash
-python manage.py shell -c "from django.contrib.auth.models import User; User.objects.create_user('demo', password='demo123')"
-```
-
-### 3. Web Frontend Setup
-
+### 2. Frontend Setup
 ```bash
 cd web
 npm install
 npm run dev
 ```
 
-Web app runs at `http://localhost:5173`
-
-### 4. Desktop App Setup (Development)
-
+### 3. Desktop App
 ```bash
 cd desktop
 pip install -r requirements.txt
 python main.py
 ```
-
-### 5. Desktop App (Standalone Release)
-
-A standalone Windows executable is available for users who do not want to set up the Python environment.
-
-**📥 [Download Latest Release](https://github.com/mimo-to/Chemical-Equipment-Parameter-Visualizer/releases)**
-
-**Installation & Usage:**
-1. Ensure the **Backend Server** is running (`http://127.0.0.1:8000`).
-2. Download `Chemical_Equipment_Visualizer_Desktop_Windows.zip` from the Releases page.
-3. Extract the ZIP file.
-4. Run `Chemical_Equipment_Visualizer_Desktop.exe`.
-5. Login with your existing account credentials.
+*(Or download the standalone executable from Releases)*
 
 ---
 
-## API Reference
+## 📚 Documentation
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| `POST` | `/api/login/` | Get authentication token | No |
-| `POST` | `/api/upload/` | Upload CSV dataset | Token |
-| `GET` | `/api/history/` | List last 5 datasets | Token |
-| `GET` | `/api/dataset/<id>/` | Get dataset details | Token |
-| `POST` | `/api/compare/` | Compare two datasets | Token |
-| `GET` | `/api/report/<id>/` | Download PDF report | Token |
+Detailed documentation for reviewers and developers:
 
-### CSV Format
-
-Required columns: `Equipment Name`, `Type`, `Flowrate`, `Pressure`, `Temperature`
-
-```csv
-Equipment Name,Type,Flowrate,Pressure,Temperature
-Reactor-A,Vessel,120.5,5.2,110.0
-Pump-Main,Pump,500.0,10.0,40.0
-HeatEx-1,Heat Exchanger,250.0,3.5,85.0
-```
+*   **[📂 API Documentation](backend/API_DOCUMENTATION.md)** - Endpoints, Request/Response examples.
+*   **[✅ Submission Checklist](SUBMISSION_CHECKLIST.md)** - Operational status of all features.
+*   **[☁️ Deployment Guide](project_documentation/DEPLOYMENT_GUIDE.md)** - Production setup for Render/Vercel.
 
 ---
 
-## Sample Data
+## 🧪 Testing
 
-### Basic Testing
-Use `sample_equipment_data.csv` with 16 equipment entries across 7 types:
-- Vessels, Pumps, Heat Exchangers, Columns, Compressors, Mixers, Separators
-
-### Comparison Testing
-Two sample files are included to test the **Dataset Comparison** feature:
-
-| File | Equipment Count | Types |
-|------|-----------------|-------|
-| `sample_equipment_data_1.csv` | 16 entries | Vessels, Pumps, Heat Exchangers, Columns, Compressors, Mixers, Separators |
-| `sample_equipment_data_2.csv` | 15 entries | Vessels, Pumps, Heat Exchangers, Columns, Compressors, Mixers, Separators, Filters, Coolers, Boilers, Fans, Valves, Agitators |
-
-**To test comparison:**
-1. Upload both sample files via the Data Input tab
-2. Go to the **Compare** tab
-3. Select `sample_equipment_data_1.csv` as Dataset A
-4. Select `sample_equipment_data_2.csv` as Dataset B
-5. Click **Compare** to see the parameter differences
-
----
-
-## Configuration Notes
-
-**Backend URL:** Both frontends connect to `http://127.0.0.1:8000`
-
-**CORS Origins:** Pre-configured for `localhost:5173` and `localhost:3000`. Update `CORS_ALLOWED_ORIGINS` in `backend/config/settings.py` if needed.
-
----
-
-## Usage Guide
-
-1. **Start Backend** - Run Django server first
-2. **Login** - Use created credentials in web or desktop app
-3. **Upload** - Select the sample CSV or your own equipment data
-4. **Analyze** - View auto-generated charts and statistics
-5. **Compare** - Upload multiple datasets and compare them in the Compare tab
-6. **Export** - Download PDF report from History section
-
----
-
-## Testing
+We employ a comprehensive test suite covering Models, Views, and Validation logic.
 
 ```bash
 cd backend
 python manage.py test api.tests
 ```
 
----
-
-## Troubleshooting
-
-- **Port 8000 busy?** `netstat -ano | findstr :8000` then kill the process
-- **Module not found?** Reactivate venv: `venv\Scripts\activate`
-- **CORS errors?** Check backend running on `127.0.0.1:8000`
-- **Login fails?** Create user with `python manage.py createsuperuser`
+**Key Test Areas:**
+*   `test_validators.py`: Ensures only valid CSVs with correct columns are processed.
+*   `test_views.py`: Verifies API response structures and status codes.
+*   `test_polish.py`: Verifies PDF generation and invalid file handling.
 
 ---
 
-## License
+## 🔧 Tech Stack
 
-This project was developed as part of the FOSSEE Semester Internship 2026 screening task.
+| Component | Technology | Reason |
+|-----------|------------|--------|
+| **Backend** | Django REST Framework | Robust serialization & security features. |
+| **Analysis** | Pandas | High-performance data manipulation. |
+| **Web** | React + Vite | Fast HMR and efficient component-based UI. |
+| **Desktop** | PyQt5 | Native look-and-feel cross-platform app. |
+| **Reporting** | ReportLab | Programmatic PDF generation with vector charts. |
+
+---
+
+*Note: The `web/public/*.zip` file in the repo is an artifact of the build process and is not required for evaluation.*

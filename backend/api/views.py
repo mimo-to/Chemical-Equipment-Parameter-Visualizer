@@ -16,6 +16,11 @@ from datetime import datetime
 import pandas as pd
 import io
 
+from reportlab.graphics.shapes import Drawing
+from reportlab.graphics.charts.piecharts import Pie
+from reportlab.graphics.charts.legends import Legend
+from reportlab.lib.validators import Auto
+
 from .models import EquipmentDataset
 from .serializers import EquipmentDatasetSerializer
 from .validators import validate_file_size, validate_file_extension, validate_csv_structure, validate_csv_content
@@ -77,80 +82,80 @@ def upload(request):
     if 'file' not in request.FILES:
         return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
     
-    file = request.FILES['file']
+    equipment_file = request.FILES['file']
     
     try:
-        validate_file_extension(file)
-        validate_file_size(file)
-    except Exception as e:
-        return Response({'error': str(e.message)}, status=status.HTTP_400_BAD_REQUEST)
+        validate_file_extension(equipment_file)
+        validate_file_size(equipment_file)
+    except Exception as validation_error:
+        return Response({'error': str(validation_error)}, status=status.HTTP_400_BAD_REQUEST)
     
     try:
-        file.seek(0)
-        csv_content = file.read().decode('utf-8')
-        df = pd.read_csv(io.StringIO(csv_content))
+        equipment_file.seek(0)
+        file_content = equipment_file.read().decode('utf-8')
+        equipment_df = pd.read_csv(io.StringIO(file_content))
     except UnicodeDecodeError:
         return Response({'error': 'File encoding must be UTF-8'}, status=status.HTTP_400_BAD_REQUEST)
     except Exception:
         return Response({'error': 'Failed to parse CSV file'}, status=status.HTTP_400_BAD_REQUEST)
     
     try:
-        validate_csv_structure(df)
-        validate_csv_content(df)
-    except Exception as e:
-        return Response({'error': str(e.message)}, status=status.HTTP_400_BAD_REQUEST)
+        validate_csv_structure(equipment_df)
+        validate_csv_content(equipment_df)
+    except Exception as structure_error:
+        return Response({'error': str(structure_error)}, status=status.HTTP_400_BAD_REQUEST)
     
     with transaction.atomic():
-        dataset = EquipmentDataset.objects.create(
+        new_dataset = EquipmentDataset.objects.create(
             user=request.user,
-            filename=file.name,
-            total_count=len(df),
-            avg_flowrate=round(df['Flowrate'].mean(), 2),
-            avg_pressure=round(df['Pressure'].mean(), 2),
-            avg_temperature=round(df['Temperature'].mean(), 2),
-            type_distribution=df['Type'].value_counts().to_dict(),
-            csv_data=csv_content
+            filename=equipment_file.name,
+            total_count=len(equipment_df),
+            avg_flowrate=round(equipment_df['Flowrate'].mean(), 2),
+            avg_pressure=round(equipment_df['Pressure'].mean(), 2),
+            avg_temperature=round(equipment_df['Temperature'].mean(), 2),
+            type_distribution=equipment_df['Type'].value_counts().to_dict(),
+            csv_data=file_content
         )
         
-        user_count = EquipmentDataset.objects.filter(user=request.user).count()
-        if user_count > HISTORY_LIMIT:
-            oldest_ids = list(EquipmentDataset.objects.filter(user=request.user).order_by('uploaded_at', 'id').values_list('id', flat=True)[:user_count - HISTORY_LIMIT])
-            EquipmentDataset.objects.filter(id__in=oldest_ids).delete()
+        current_dataset_count = EquipmentDataset.objects.filter(user=request.user).count()
+        if current_dataset_count > HISTORY_LIMIT:
+            redundant_dataset_ids = list(EquipmentDataset.objects.filter(user=request.user).order_by('uploaded_at', 'id').values_list('id', flat=True)[:current_dataset_count - HISTORY_LIMIT])
+            EquipmentDataset.objects.filter(id__in=redundant_dataset_ids).delete()
     
-    return Response(EquipmentDatasetSerializer(dataset).data, status=status.HTTP_201_CREATED)
+    return Response(EquipmentDatasetSerializer(new_dataset).data, status=status.HTTP_201_CREATED)
 
 
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def history(request):
-    datasets = EquipmentDataset.objects.filter(user=request.user).order_by('-uploaded_at', '-id')[:HISTORY_LIMIT]
-    return Response(EquipmentDatasetSerializer(datasets, many=True).data)
+    user_datasets = EquipmentDataset.objects.filter(user=request.user).order_by('-uploaded_at', '-id')[:HISTORY_LIMIT]
+    return Response(EquipmentDatasetSerializer(user_datasets, many=True).data)
 
 
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def compare_datasets(request):
-    id1 = request.data.get('dataset1')
-    id2 = request.data.get('dataset2')
+    primary_id = request.data.get('dataset1')
+    secondary_id = request.data.get('dataset2')
     
-    if not id1 or not id2:
+    if not primary_id or not secondary_id:
         return Response({'error': 'Both dataset1 and dataset2 IDs required'}, status=status.HTTP_400_BAD_REQUEST)
     
     try:
-        ds1 = EquipmentDataset.objects.get(pk=id1, user=request.user)
-        ds2 = EquipmentDataset.objects.get(pk=id2, user=request.user)
+        primary_dataset = EquipmentDataset.objects.get(pk=primary_id, user=request.user)
+        secondary_dataset = EquipmentDataset.objects.get(pk=secondary_id, user=request.user)
     except EquipmentDataset.DoesNotExist:
         return Response({'error': 'Dataset not found or access denied'}, status=status.HTTP_404_NOT_FOUND)
     
     return Response({
-        'dataset1': EquipmentDatasetSerializer(ds1).data,
-        'dataset2': EquipmentDatasetSerializer(ds2).data,
+        'dataset1': EquipmentDatasetSerializer(primary_dataset).data,
+        'dataset2': EquipmentDatasetSerializer(secondary_dataset).data,
         'comparison': {
-            'flowrate_diff': round(ds1.avg_flowrate - ds2.avg_flowrate, 2),
-            'pressure_diff': round(ds1.avg_pressure - ds2.avg_pressure, 2),
-            'temperature_diff': round(ds1.avg_temperature - ds2.avg_temperature, 2),
+            'flowrate_diff': round(primary_dataset.avg_flowrate - secondary_dataset.avg_flowrate, 2),
+            'pressure_diff': round(primary_dataset.avg_pressure - secondary_dataset.avg_pressure, 2),
+            'temperature_diff': round(primary_dataset.avg_temperature - secondary_dataset.avg_temperature, 2),
         }
     })
 
@@ -180,20 +185,20 @@ def get_dataset_detail(request, pk):
 @permission_classes([IsAuthenticated])
 def get_dataset_visualization(request, pk):
     try:
-        dataset = EquipmentDataset.objects.get(pk=pk, user=request.user)
+        equipment_record = EquipmentDataset.objects.get(pk=pk, user=request.user)
         
-        df = pd.read_csv(io.StringIO(dataset.csv_data))
+        equipment_df = pd.read_csv(io.StringIO(equipment_record.csv_data))
         
         return Response({
             'type_distribution': {
-                'labels': list(dataset.type_distribution.keys()),
-                'data': list(dataset.type_distribution.values())
+                'labels': list(equipment_record.type_distribution.keys()),
+                'data': list(equipment_record.type_distribution.values())
             },
             'averages': {
                 'labels': ['Flowrate', 'Pressure', 'Temperature'],
-                'data': [dataset.avg_flowrate, dataset.avg_pressure, dataset.avg_temperature],
-                'min': [float(df['Flowrate'].min()), float(df['Pressure'].min()), float(df['Temperature'].min())],
-                'max': [float(df['Flowrate'].max()), float(df['Pressure'].max()), float(df['Temperature'].max())]
+                'data': [equipment_record.avg_flowrate, equipment_record.avg_pressure, equipment_record.avg_temperature],
+                'min': [float(equipment_df['Flowrate'].min()), float(equipment_df['Pressure'].min()), float(equipment_df['Temperature'].min())],
+                'max': [float(equipment_df['Flowrate'].max()), float(equipment_df['Pressure'].max()), float(equipment_df['Temperature'].max())]
             }
         })
     except EquipmentDataset.DoesNotExist:
@@ -205,27 +210,27 @@ def get_dataset_visualization(request, pk):
 @permission_classes([IsAuthenticated])
 def generate_report(request, pk):
     try:
-        dataset = EquipmentDataset.objects.get(pk=pk, user=request.user)
+        equipment_record = EquipmentDataset.objects.get(pk=pk, user=request.user)
     except EquipmentDataset.DoesNotExist:
         return Response({'error': 'Dataset not found'}, status=status.HTTP_404_NOT_FOUND)
     
     try:
-        df = pd.read_csv(io.StringIO(dataset.csv_data))
+        equipment_df = pd.read_csv(io.StringIO(equipment_record.csv_data))
         
-        buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=72, bottomMargin=72)
-        styles = getSampleStyleSheet()
-        elements = []
+        report_buffer = io.BytesIO()
+        pdf_doc = SimpleDocTemplate(report_buffer, pagesize=letter, topMargin=72, bottomMargin=72)
+        pdf_styles = getSampleStyleSheet()
+        report_elements = []
         
-        elements.append(Paragraph("CHEMICAL EQUIPMENT ANALYSIS REPORT", styles['Title']))
-        elements.append(Spacer(1, 12))
+        report_elements.append(Paragraph("CHEMICAL EQUIPMENT ANALYSIS REPORT", pdf_styles['Title']))
+        report_elements.append(Spacer(1, 12))
         
         meta_data = [
-            ['Dataset ID', str(dataset.id)],
-            ['Filename', dataset.filename],
-            ['Upload Date', dataset.uploaded_at.astimezone().strftime('%Y-%m-%d %I:%M %p')],
+            ['Dataset ID', str(equipment_record.id)],
+            ['Filename', equipment_record.filename],
+            ['Upload Date', equipment_record.uploaded_at.astimezone().strftime('%Y-%m-%d %I:%M %p')],
             ['Generated', datetime.now().strftime('%Y-%m-%d %I:%M %p')],
-            ['Total Records', str(dataset.total_count)]
+            ['Total Records', str(equipment_record.total_count)]
         ]
         meta_table = Table(meta_data, colWidths=[120, 300])
         meta_table.setStyle(TableStyle([
@@ -233,17 +238,17 @@ def generate_report(request, pk):
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
         ]))
-        elements.append(meta_table)
-        elements.append(Spacer(1, 24))
+        report_elements.append(meta_table)
+        report_elements.append(Spacer(1, 24))
         
-        elements.append(Paragraph("Summary Statistics", styles['Heading2']))
-        elements.append(Spacer(1, 8))
+        report_elements.append(Paragraph("Summary Statistics", pdf_styles['Heading2']))
+        report_elements.append(Spacer(1, 8))
         
         stats_data = [
             ['Parameter', 'Mean', 'Min', 'Max'],
-            ['Flowrate', f"{dataset.avg_flowrate:.2f}", f"{df['Flowrate'].min():.2f}", f"{df['Flowrate'].max():.2f}"],
-            ['Pressure', f"{dataset.avg_pressure:.2f}", f"{df['Pressure'].min():.2f}", f"{df['Pressure'].max():.2f}"],
-            ['Temperature', f"{dataset.avg_temperature:.2f}", f"{df['Temperature'].min():.2f}", f"{df['Temperature'].max():.2f}"]
+            ['Flowrate', f"{equipment_record.avg_flowrate:.2f}", f"{equipment_df['Flowrate'].min():.2f}", f"{equipment_df['Flowrate'].max():.2f}"],
+            ['Pressure', f"{equipment_record.avg_pressure:.2f}", f"{equipment_df['Pressure'].min():.2f}", f"{equipment_df['Pressure'].max():.2f}"],
+            ['Temperature', f"{equipment_record.avg_temperature:.2f}", f"{equipment_df['Temperature'].min():.2f}", f"{equipment_df['Temperature'].max():.2f}"]
         ]
         stats_table = Table(stats_data, colWidths=[120, 100, 100, 100])
         stats_table.setStyle(TableStyle([
@@ -256,13 +261,13 @@ def generate_report(request, pk):
             ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
             ('TOPPADDING', (0, 0), (-1, -1), 10),
         ]))
-        elements.append(stats_table)
-        elements.append(Spacer(1, 24))
+        report_elements.append(stats_table)
+        report_elements.append(Spacer(1, 24))
         
-        elements.append(Paragraph("Type Distribution", styles['Heading2']))
-        elements.append(Spacer(1, 8))
+        report_elements.append(Paragraph("Type Distribution", pdf_styles['Heading2']))
+        report_elements.append(Spacer(1, 8))
         
-        type_data = [['Equipment Type', 'Count']] + [[k, str(v)] for k, v in dataset.type_distribution.items()]
+        type_data = [['Equipment Type', 'Count']] + [[k, str(v)] for k, v in equipment_record.type_distribution.items()]
         type_table = Table(type_data, colWidths=[200, 100])
         type_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#03045e')),
@@ -273,14 +278,79 @@ def generate_report(request, pk):
             ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#caf0f8')),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
         ]))
-        elements.append(type_table)
-        elements.append(Spacer(1, 24))
+        report_elements.append(type_table)
+        report_elements.append(Spacer(1, 24))
+
+        report_elements.append(Paragraph("Type Distribution Visualization", pdf_styles['Heading2']))
+        report_elements.append(Spacer(1, 12))
+
+        if equipment_record.type_distribution:
+            try:
+                d = Drawing(400, 250)
+                
+                pc = Pie()
+                pc.x = 115
+                pc.y = 50
+                pc.width = 150
+                pc.height = 150
+                
+                raw_data = equipment_record.type_distribution
+                data = []
+                labels = []
+                for k, v in raw_data.items():
+                    try:
+                         val = int(v)
+                         data.append(val)
+                         labels.append(str(k))
+                    except:
+                        pass
+
+                if sum(data) > 0:
+                    pc.data = data
+                    pc.labels = labels
+                    pc.simpleLabels = 0 
+                    
+                    from reportlab.lib import colors as rl_colors
+                    chart_colors = [rl_colors.HexColor('#03045e'), rl_colors.HexColor('#0077b6'), 
+                                    rl_colors.HexColor('#00b4d8'), rl_colors.HexColor('#90e0ef'),
+                                    rl_colors.HexColor('#caf0f8'), rl_colors.HexColor('#fca311'),
+                                    rl_colors.HexColor('#e63946')]
+                    
+                    pc.slices.strokeWidth = 0.5
+                    for i in range(len(data)):
+                        pc.slices[i].fillColor = chart_colors[i % len(chart_colors)]
+                    
+                    d.add(pc)
+
+                    legend = Legend()
+                    legend.alignment = 'right'
+                    legend.x = 300
+                    legend.y = 200
+                    legend.columnMaximum = 10
+                    legend.colorNamePairs = [(chart_colors[i % len(chart_colors)], labels[i]) for i in range(len(data))]
+                    d.add(legend)
+                    
+                    chart_table = Table([[d]], colWidths=[400])
+                    chart_table.setStyle(TableStyle([
+                        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+                        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                    ]))
+                    report_elements.append(chart_table)
+                else:
+                    report_elements.append(Paragraph("No numeric data available for chart.", pdf_styles['Normal']))
+            except Exception as chart_error:
+                print(f"Chart Generation Error: {str(chart_error)}")
+                report_elements.append(Paragraph(f"Chart Error: {str(chart_error)}", pdf_styles['Italic']))
+        else:
+             report_elements.append(Paragraph("No distribution data available.", pdf_styles['Normal']))
+             
+        report_elements.append(Spacer(1, 24))
         
-        elements.append(Paragraph("Complete Equipment Data", styles['Heading2']))
-        elements.append(Spacer(1, 12))
+        report_elements.append(Paragraph("Complete Equipment Data", pdf_styles['Heading2']))
+        report_elements.append(Spacer(1, 12))
         
         data_rows = [['Equipment Name', 'Type', 'Flowrate', 'Pressure', 'Temperature']]
-        for _, row in df.iterrows():
+        for _, row in equipment_df.iterrows():
             data_rows.append([
                 str(row['Equipment Name']),
                 str(row['Type']),
@@ -304,7 +374,7 @@ def generate_report(request, pk):
             bg_color = colors.HexColor('#caf0f8') if i % 2 == 1 else colors.HexColor('#e0f7fa')
             table_style.append(('BACKGROUND', (0, i), (-1, i), bg_color))
         data_table.setStyle(TableStyle(table_style))
-        elements.append(data_table)
+        report_elements.append(data_table)
         
         def add_page_number(canvas, doc):
             canvas.saveState()
@@ -315,15 +385,15 @@ def generate_report(request, pk):
             canvas.drawRightString(letter[0]-40, 30, datetime.now().strftime('%Y-%m-%d'))
             canvas.restoreState()
         
-        doc.build(elements, onFirstPage=add_page_number, onLaterPages=add_page_number)
-        buffer.seek(0)
+        pdf_doc.build(report_elements, onFirstPage=add_page_number, onLaterPages=add_page_number)
+        report_buffer.seek(0)
         
-        response = HttpResponse(buffer, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="report_{dataset.id}.pdf"'
+        response = HttpResponse(report_buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="report_{equipment_record.id}.pdf"'
         return response
-    except Exception as e:
+    except Exception as report_error:
         import traceback
-        print(f"PDF Generation Error: {str(e)}")
+        print(f"PDF Generation Error: {str(report_error)}")
         traceback.print_exc()
-        return Response({'error': f'Report generation failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'error': f'Report generation failed: {str(report_error)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
