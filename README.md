@@ -101,7 +101,6 @@ python manage.py test api.tests
 **Key Test Areas:**
 *   `test_validators.py`: Ensures only valid CSVs with correct columns are processed.
 *   `test_views.py`: Verifies API response structures and status codes.
-*   `test_polish.py`: Verifies PDF generation and invalid file handling.
 
 ---
 
@@ -117,4 +116,4 @@ python manage.py test api.tests
 
 ---
 
-*Note: The `web/public/*.zip` file in the repo is an artifact of the build process and is not required for evaluation.*
+*Note: The `web/public/*.zip` file in the repo is an artifact of the build process.*
