@@ -1,10 +1,8 @@
-# Chemical Equipment Parameter Visualizer
+# Chemical Equipment Visualizer
 
-[![Tests](https://github.com/mimo-to/Chemical-Equipment-Parameter-Visualizer/actions/workflows/test.yml/badge.svg)](https://github.com/mimo-to/Chemical-Equipment-Parameter-Visualizer/actions)
+Screening task submission for FOSSEE Internship 2026.
 
-> **Developed for FOSSEE Semester Internship 2026**
-
-A full-stack data visualization platform for chemical engineering applications. Upload CSV datasets containing equipment parameters and instantly generate interactive visualizations, statistical summaries, and downloadable PDF reports.
+Visualizes chemical equipment data from CSV files.
 
 ---
 
@@ -18,6 +16,10 @@ A full-stack data visualization platform for chemical engineering applications. 
 - **PDF Reports** - Generate and download professional analysis reports
 - **Dual Frontend** - Modern web dashboard + native desktop application
 - **Token Authentication** - Secure API access with token-based auth
+
+## Deployment
+
+**Live Demo:** [Link to Deployed Application](https://chemical-equipment-parameter-visual-nu.vercel.app)
 
 ---
 

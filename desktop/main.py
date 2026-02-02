@@ -11,18 +11,13 @@ def main():
     
     while True:
         login = LoginDialog()
-        if login.exec_() == QDialog.Accepted:
-            window = MainWindow(login.token)
+        if login.exec_() != QDialog.Accepted:
+            break
             
-            logged_out = [False]
-            window.logout_requested.connect(lambda: logged_out.__setitem__(0, True))
-            
-            window.show()
-            app.exec_()
-            
-            if not logged_out[0]:
-                break
-        else:
+        window = MainWindow(login.token)
+        window.show()
+        
+        if app.exec_() != 0:
             break
     
     sys.exit()
