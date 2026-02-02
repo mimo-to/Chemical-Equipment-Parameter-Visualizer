@@ -85,7 +85,6 @@ python main.py
 Detailed documentation for reviewers and developers:
 
 *   **[📂 API Documentation](backend/API_DOCUMENTATION.md)** - Endpoints, Request/Response examples.
-*   **[✅ Submission Checklist](SUBMISSION_CHECKLIST.md)** - Operational status of all features.
 *   **[☁️ Deployment Guide](project_documentation/DEPLOYMENT_GUIDE.md)** - Production setup for Render/Vercel.
 
 ---
