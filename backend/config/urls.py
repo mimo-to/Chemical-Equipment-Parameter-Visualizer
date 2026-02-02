@@ -16,11 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from api.views import login, upload, history, get_dataset_detail, get_dataset_visualization, generate_report, compare_datasets
+from api.views import login, register, upload, history, get_dataset_detail, get_dataset_visualization, generate_report, compare_datasets
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/login/', login),
+    path('api/register/', register),
     path('api/upload/', upload),
     path('api/history/', history),
     path('api/compare/', compare_datasets),

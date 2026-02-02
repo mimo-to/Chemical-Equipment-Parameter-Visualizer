@@ -38,6 +38,28 @@ def login(request):
 
 
 @api_view(['POST'])
+def register(request):
+    from django.contrib.auth.models import User
+    
+    username = request.data.get('username', '').strip()
+    password = request.data.get('password', '')
+    email = request.data.get('email', '').strip()
+    
+    if not username or not password:
+        return Response({'error': 'Username and password required'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if len(password) < 8:
+        return Response({'error': 'Password must be at least 8 characters'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if User.objects.filter(username=username).exists():
+        return Response({'error': 'Username already exists'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    user = User.objects.create_user(username=username, password=password, email=email)
+    token = Token.objects.create(user=user)
+    return Response({'token': token.key, 'user_id': user.id, 'username': user.username}, status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def upload(request):
@@ -69,6 +91,7 @@ def upload(request):
     
     with transaction.atomic():
         dataset = EquipmentDataset.objects.create(
+            user=request.user,
             filename=file.name,
             total_count=len(df),
             avg_flowrate=round(df['Flowrate'].mean(), 2),
@@ -78,8 +101,9 @@ def upload(request):
             csv_data=csv_content
         )
         
-        if EquipmentDataset.objects.count() > HISTORY_LIMIT:
-            oldest_ids = list(EquipmentDataset.objects.order_by('uploaded_at', 'id').values_list('id', flat=True)[:EquipmentDataset.objects.count() - HISTORY_LIMIT])
+        user_count = EquipmentDataset.objects.filter(user=request.user).count()
+        if user_count > HISTORY_LIMIT:
+            oldest_ids = list(EquipmentDataset.objects.filter(user=request.user).order_by('uploaded_at', 'id').values_list('id', flat=True)[:user_count - HISTORY_LIMIT])
             EquipmentDataset.objects.filter(id__in=oldest_ids).delete()
     
     return Response(EquipmentDatasetSerializer(dataset).data, status=status.HTTP_201_CREATED)
@@ -89,7 +113,7 @@ def upload(request):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def history(request):
-    datasets = EquipmentDataset.objects.order_by('-uploaded_at', '-id')[:HISTORY_LIMIT]
+    datasets = EquipmentDataset.objects.filter(user=request.user).order_by('-uploaded_at', '-id')[:HISTORY_LIMIT]
     return Response(EquipmentDatasetSerializer(datasets, many=True).data)
 
 
@@ -104,10 +128,10 @@ def compare_datasets(request):
         return Response({'error': 'Both dataset1 and dataset2 IDs required'}, status=status.HTTP_400_BAD_REQUEST)
     
     try:
-        ds1 = EquipmentDataset.objects.get(pk=id1)
-        ds2 = EquipmentDataset.objects.get(pk=id2)
+        ds1 = EquipmentDataset.objects.get(pk=id1, user=request.user)
+        ds2 = EquipmentDataset.objects.get(pk=id2, user=request.user)
     except EquipmentDataset.DoesNotExist:
-        return Response({'error': 'One or both datasets not found'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'error': 'Dataset not found or access denied'}, status=status.HTTP_404_NOT_FOUND)
     
     return Response({
         'dataset1': EquipmentDatasetSerializer(ds1).data,
@@ -125,7 +149,7 @@ def compare_datasets(request):
 @permission_classes([IsAuthenticated])
 def get_dataset_detail(request, pk):
     try:
-        dataset = EquipmentDataset.objects.get(pk=pk)
+        dataset = EquipmentDataset.objects.get(pk=pk, user=request.user)
         return Response(EquipmentDatasetSerializer(dataset).data)
     except EquipmentDataset.DoesNotExist:
         return Response({'error': 'Dataset not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -136,7 +160,7 @@ def get_dataset_detail(request, pk):
 @permission_classes([IsAuthenticated])
 def get_dataset_visualization(request, pk):
     try:
-        dataset = EquipmentDataset.objects.get(pk=pk)
+        dataset = EquipmentDataset.objects.get(pk=pk, user=request.user)
         
         df = pd.read_csv(io.StringIO(dataset.csv_data))
         
@@ -161,7 +185,7 @@ def get_dataset_visualization(request, pk):
 @permission_classes([IsAuthenticated])
 def generate_report(request, pk):
     try:
-        dataset = EquipmentDataset.objects.get(pk=pk)
+        dataset = EquipmentDataset.objects.get(pk=pk, user=request.user)
     except EquipmentDataset.DoesNotExist:
         return Response({'error': 'Dataset not found'}, status=status.HTTP_404_NOT_FOUND)
     

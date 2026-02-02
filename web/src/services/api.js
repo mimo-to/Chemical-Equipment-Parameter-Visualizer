@@ -27,6 +27,9 @@ const api = async (endpoint, options = {}) => {
 export const loginUser = (username, password) =>
   api('/login/', { method: 'POST', body: JSON.stringify({ username, password }) });
 
+export const registerUser = (username, password, email) =>
+  api('/register/', { method: 'POST', body: JSON.stringify({ username, password, email }) });
+
 export const uploadCSV = async (file, token) => {
   const formData = new FormData();
   formData.append('file', file);

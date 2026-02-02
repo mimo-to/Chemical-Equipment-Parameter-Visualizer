@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (
     QCheckBox, QFrame
 )
 from PyQt5.QtCore import Qt
-from worker import LoginWorker
+from worker import LoginWorker, RegisterWorker
 
 THEME = """
 QDialog {
@@ -85,6 +85,17 @@ QPushButton#cancel:hover {
     background-color: #d62828;
     color: white;
 }
+QPushButton#toggle {
+    background-color: transparent;
+    border: none;
+    color: #00b4d8;
+    padding: 8px;
+    font-size: 12px;
+}
+QPushButton#toggle:hover {
+    color: #90e0ef;
+    text-decoration: underline;
+}
 QCheckBox {
     color: #90e0ef;
     font-family: 'JetBrains Mono', Consolas, monospace;
@@ -113,11 +124,12 @@ class LoginDialog(QDialog):
         super().__init__(parent)
         self.token = None
         self.worker = None
+        self.is_registering = False
         self.init_ui()
         
     def init_ui(self):
         self.setWindowTitle("CHEM-VIS Authentication")
-        self.setFixedSize(460, 500)
+        self.setFixedSize(460, 560)
         self.setStyleSheet(THEME)
         
         outer = QVBoxLayout()
@@ -134,10 +146,10 @@ class LoginDialog(QDialog):
         title.setAlignment(Qt.AlignCenter)
         card_layout.addWidget(title)
         
-        subtitle = QLabel("AUTHENTICATION REQUIRED")
-        subtitle.setObjectName("subtitle")
-        subtitle.setAlignment(Qt.AlignCenter)
-        card_layout.addWidget(subtitle)
+        self.subtitle = QLabel("AUTHENTICATION REQUIRED")
+        self.subtitle.setObjectName("subtitle")
+        self.subtitle.setAlignment(Qt.AlignCenter)
+        card_layout.addWidget(self.subtitle)
         
         card_layout.addSpacing(20)
         
@@ -151,9 +163,19 @@ class LoginDialog(QDialog):
         
         card_layout.addSpacing(8)
         
-        password_label = QLabel("PASSWORD")
-        password_label.setObjectName("fieldLabel")
-        card_layout.addWidget(password_label)
+        self.email_label = QLabel("EMAIL (OPTIONAL)")
+        self.email_label.setObjectName("fieldLabel")
+        self.email_label.hide()
+        card_layout.addWidget(self.email_label)
+        
+        self.email_input = QLineEdit()
+        self.email_input.setPlaceholderText("Enter email")
+        self.email_input.hide()
+        card_layout.addWidget(self.email_input)
+        
+        self.password_label = QLabel("PASSWORD")
+        self.password_label.setObjectName("fieldLabel")
+        card_layout.addWidget(self.password_label)
         
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("Enter password")
@@ -171,6 +193,11 @@ class LoginDialog(QDialog):
         self.error_label.hide()
         card_layout.addWidget(self.error_label)
         
+        self.toggle_btn = QPushButton("Need an account? Sign Up")
+        self.toggle_btn.setObjectName("toggle")
+        self.toggle_btn.clicked.connect(self.toggle_mode)
+        card_layout.addWidget(self.toggle_btn)
+        
         card_layout.addStretch(1)
         
         buttons = QHBoxLayout()
@@ -182,7 +209,7 @@ class LoginDialog(QDialog):
         buttons.addWidget(self.cancel_btn)
         
         self.login_btn = QPushButton("ACCESS SYSTEM")
-        self.login_btn.clicked.connect(self.handle_login)
+        self.login_btn.clicked.connect(self.handle_submit)
         buttons.addWidget(self.login_btn)
         
         card_layout.addLayout(buttons)
@@ -190,13 +217,33 @@ class LoginDialog(QDialog):
         outer.addWidget(card)
         self.setLayout(outer)
         
-        self.username_input.returnPressed.connect(self.handle_login)
-        self.password_input.returnPressed.connect(self.handle_login)
+        self.username_input.returnPressed.connect(self.handle_submit)
+        self.password_input.returnPressed.connect(self.handle_submit)
+        self.email_input.returnPressed.connect(self.handle_submit)
         
     def toggle_password(self, checked):
         self.password_input.setEchoMode(QLineEdit.Normal if checked else QLineEdit.Password)
+    
+    def toggle_mode(self):
+        self.is_registering = not self.is_registering
+        self.error_label.hide()
         
-    def handle_login(self):
+        if self.is_registering:
+            self.subtitle.setText("CREATE ACCOUNT")
+            self.email_label.show()
+            self.email_input.show()
+            self.password_label.setText("PASSWORD (MIN 8 CHARS)")
+            self.login_btn.setText("CREATE ACCOUNT")
+            self.toggle_btn.setText("Already have an account? Sign In")
+        else:
+            self.subtitle.setText("AUTHENTICATION REQUIRED")
+            self.email_label.hide()
+            self.email_input.hide()
+            self.password_label.setText("PASSWORD")
+            self.login_btn.setText("ACCESS SYSTEM")
+            self.toggle_btn.setText("Need an account? Sign Up")
+        
+    def handle_submit(self):
         username = self.username_input.text().strip()
         password = self.password_input.text()
         
@@ -207,7 +254,12 @@ class LoginDialog(QDialog):
         self.set_loading(True)
         self.error_label.hide()
         
-        self.worker = LoginWorker(username, password)
+        if self.is_registering:
+            email = self.email_input.text().strip()
+            self.worker = RegisterWorker(username, password, email)
+        else:
+            self.worker = LoginWorker(username, password)
+            
         self.worker.success.connect(self.on_success)
         self.worker.error.connect(self.on_error)
         self.worker.start()
@@ -227,6 +279,12 @@ class LoginDialog(QDialog):
     def set_loading(self, loading):
         self.username_input.setEnabled(not loading)
         self.password_input.setEnabled(not loading)
+        self.email_input.setEnabled(not loading)
         self.login_btn.setEnabled(not loading)
         self.cancel_btn.setEnabled(not loading)
-        self.login_btn.setText("AUTHENTICATING..." if loading else "ACCESS SYSTEM")
+        self.toggle_btn.setEnabled(not loading)
+        
+        if self.is_registering:
+            self.login_btn.setText("CREATING..." if loading else "CREATE ACCOUNT")
+        else:
+            self.login_btn.setText("AUTHENTICATING..." if loading else "ACCESS SYSTEM")

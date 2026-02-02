@@ -65,6 +65,31 @@ class LoginWorker(QThread):
             self.error.emit(f"Connection error: {str(e)}")
 
 
+class RegisterWorker(QThread):
+    success = pyqtSignal(str)
+    error = pyqtSignal(str)
+
+    def __init__(self, username, password, email=""):
+        super().__init__()
+        self.username = username
+        self.password = password
+        self.email = email
+
+    def run(self):
+        try:
+            response = requests.post(
+                f"{API_BASE}/api/register/",
+                json={"username": self.username, "password": self.password, "email": self.email},
+                timeout=30
+            )
+            if response.status_code == 201:
+                self.success.emit(response.json().get("token", ""))
+            else:
+                self.error.emit(response.json().get("error", "Registration failed"))
+        except requests.exceptions.RequestException as e:
+            self.error.emit(f"Connection error: {str(e)}")
+
+
 class UploadWorker(QThread):
     success = pyqtSignal(dict)
     error = pyqtSignal(str)
