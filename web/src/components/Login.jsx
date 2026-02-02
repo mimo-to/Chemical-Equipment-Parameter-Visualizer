@@ -115,7 +115,7 @@ const Login = () => {
 
                 <div className="download-msg">
                     <a
-                        href="/Chemical_Equipment_Visualizer_Desktop.zip"
+                        href="/Chemical-Equipment-Parameter-Visualizer.zip"
                         download
                         className="btn-download"
                     >
