@@ -7,18 +7,18 @@ block_cipher = None
 
 a = Analysis(
     ['main.py'],
-    pathex=['.'],  # Explicitly look in the current directory
+    pathex=['.'],
     binaries=[],
     datas=[],
     hiddenimports=[
-        'main_window', 
-        'login_dialog', 
-        'theme', 
-        'worker', 
-        'logger', 
-        'charts_widget', 
-        'compare_widget', 
-        'history_widget', 
+        'main_window',
+        'login_dialog',
+        'theme',
+        'worker',
+        'logger',
+        'charts_widget',
+        'compare_widget',
+        'history_widget',
         'upload_widget'
     ],
     hookspath=[],
