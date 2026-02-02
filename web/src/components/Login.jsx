@@ -112,6 +112,16 @@ const Login = () => {
                         {isRegistering ? 'Already have an account? Sign In' : 'Need an account? Sign Up'}
                     </button>
                 </div>
+
+                <div className="download-msg">
+                    <a
+                        href="/Chemical_Equipment_Visualizer_Desktop.exe"
+                        download
+                        className="btn-download"
+                    >
+                        <span>⬇️</span> Download Desktop App
+                    </a>
+                </div>
             </div>
         </div>
     );

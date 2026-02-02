@@ -686,3 +686,36 @@ button {
   .diff-grid { grid-template-columns: 1fr; }
   .side-by-side { grid-template-columns: 1fr; }
 }
+
+.btn-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(0, 180, 216, 0.1);
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  text-decoration: none;
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all var(--transition);
+  margin-top: 20px;
+}
+.btn-download:hover {
+  background: var(--primary);
+  color: var(--bg-dark);
+  box-shadow: 0 0 15px rgba(0, 180, 216, 0.4);
+}
+.btn-download:active {
+  transform: translateY(1px);
+}
+.download-msg {
+    margin-top: 20px; 
+    text-align: center; 
+    border-top: 1px solid rgba(255,255,255,0.1); 
+    padding-top: 20px;
+}

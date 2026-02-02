@@ -3,7 +3,7 @@ import requests
 import os
 import pathlib
 
-API_BASE = os.environ.get("API_URL", "http://localhost:8000")
+API_BASE = os.environ.get("API_URL", "https://chemical-equipment-parameter-visualizer-unts.onrender.com")
 
 
 class ApiWorker(QThread):
