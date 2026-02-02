@@ -306,6 +306,8 @@ class CompareWidget(QWidget):
             self.error_label.setText("Upload at least 2 datasets to compare.")
             self.error_label.show()
             self.compare_btn.setEnabled(False)
+        else:
+            self.compare_btn.setEnabled(True)
             
     def on_load_error(self, message):
         self.loading_label.hide()
