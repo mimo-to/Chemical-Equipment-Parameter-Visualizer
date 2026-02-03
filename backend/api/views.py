@@ -243,7 +243,8 @@ def generate_report(request, pk):
         
         from reportlab.platypus import KeepTogether
         from reportlab.graphics.charts.barcharts import VerticalBarChart
-        from reportlab.graphics.shapes import Drawing, Label
+        from reportlab.graphics.shapes import Drawing
+        from reportlab.graphics.charts.textlabels import Label
         
         summary_elements = []
         summary_elements.append(Paragraph("Summary Statistics", pdf_styles['Heading2']))
@@ -318,7 +319,7 @@ def generate_report(request, pk):
         report_elements.append(Spacer(1, 24))
         
         type_elements = []
-        type_elements.append(Paragraph("Type Distribution", pdf_styles['Heading2']))
+        type_elements.append(Paragraph("Type Distribution and Visualization", pdf_styles['Heading2']))
         type_elements.append(Spacer(1, 8))
         
         type_data = [['Equipment Type', 'Count']] + [[k, str(v)] for k, v in equipment_record.type_distribution.items()]
@@ -337,10 +338,11 @@ def generate_report(request, pk):
 
         if equipment_record.type_distribution:
             try:
-                d = Drawing(400, 250)
+                # Increased width to accommodate Legend without overlap
+                d = Drawing(500, 250)
                 
                 pc = Pie()
-                pc.x = 115
+                pc.x = 50       # Move Pie Left
                 pc.y = 50
                 pc.width = 150
                 pc.height = 150
@@ -367,7 +369,8 @@ def generate_report(request, pk):
                                     rl_colors.HexColor('#caf0f8'), rl_colors.HexColor('#fca311'),
                                     rl_colors.HexColor('#e63946')]
                     
-                    pc.slices.strokeWidth = 0.5
+                    # Remove stroke to "remove box and colour thing" (cleaner look)
+                    pc.slices.strokeWidth = 0
                     for i in range(len(data)):
                         pc.slices[i].fillColor = chart_colors[i % len(chart_colors)]
                     
@@ -375,16 +378,21 @@ def generate_report(request, pk):
 
                     legend = Legend()
                     legend.alignment = 'right'
-                    legend.x = 300
-                    legend.y = 200
+                    legend.x = 350          # Move Legend Right
+                    legend.y = 100          # Move Legend Down slightly
                     legend.columnMaximum = 10
+                    # Ensure Legend text doesn't overlap
+                    legend.fontSize = 10
+                    legend.dx = 8 
+                    legend.dy = 8
+                    legend.yGap = 2
+                    legend.deltay = 12
+                    legend.strokeColor = None  # No border around legend
                     legend.colorNamePairs = [(chart_colors[i % len(chart_colors)], labels[i]) for i in range(len(data))]
                     d.add(legend)
                     
-                    legend.colorNamePairs = [(chart_colors[i % len(chart_colors)], labels[i]) for i in range(len(data))]
-                    d.add(legend)
-                    
-                    chart_table = Table([[d]], colWidths=[400])
+                    # Chart table with increased column width
+                    chart_table = Table([[d]], colWidths=[500])
                     chart_table.setStyle(TableStyle([
                         ('ALIGN', (0,0), (-1,-1), 'CENTER'),
                         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
@@ -405,8 +413,10 @@ def generate_report(request, pk):
         report_elements.append(KeepTogether(type_elements))
         report_elements.append(Spacer(1, 24))
         
-        report_elements.append(Paragraph("Complete Equipment Data", pdf_styles['Heading2']))
-        report_elements.append(Spacer(1, 12))
+        # Group Complete Data to keep separate or together (User requested one page)
+        complete_data_elements = []
+        complete_data_elements.append(Paragraph("Complete Equipment Data", pdf_styles['Heading2']))
+        complete_data_elements.append(Spacer(1, 12))
         
         data_rows = [['Equipment Name', 'Type', 'Flowrate', 'Pressure', 'Temperature']]
         for _, row in equipment_df.iterrows():
@@ -418,7 +428,8 @@ def generate_report(request, pk):
                 f"{row['Temperature']:.2f}"
             ])
         
-        data_table = Table(data_rows, colWidths=[90, 90, 80, 80, 90])
+        # Add repeatRows=1 so headers show if it splits across pages
+        data_table = Table(data_rows, colWidths=[90, 90, 80, 80, 90], repeatRows=1)
         table_style = [
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#03045e')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -433,7 +444,13 @@ def generate_report(request, pk):
             bg_color = colors.HexColor('#caf0f8') if i % 2 == 1 else colors.HexColor('#e0f7fa')
             table_style.append(('BACKGROUND', (0, i), (-1, i), bg_color))
         data_table.setStyle(TableStyle(table_style))
-        report_elements.append(data_table)
+        
+        complete_data_elements.append(data_table)
+        
+        # Use KeepTogether to try to force single page, but wrap in try/except or just append
+        # For large datasets, KeepTogether might fail or be weird.
+        # Given "one page only" request for sample data:
+        report_elements.append(KeepTogether(complete_data_elements))
         
         def add_page_number(canvas, doc):
             canvas.saveState()
