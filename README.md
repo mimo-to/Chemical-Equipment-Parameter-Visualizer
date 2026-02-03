@@ -85,7 +85,7 @@ python main.py
 Detailed documentation for reviewers and developers:
 
 *   **[📂 API Documentation](backend/API_DOCUMENTATION.md)** - Endpoints, Request/Response examples.
-*   **[☁️ Deployment Guide](project_documentation/DEPLOYMENT_GUIDE.md)** - Production setup for Render/Vercel.
+*   **[☁️ Deployment Guide](/DEPLOYMENT_GUIDE.md)** - Production setup for Render/Vercel.
 
 ---
 
