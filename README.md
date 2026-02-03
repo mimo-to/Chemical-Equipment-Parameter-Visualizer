@@ -15,7 +15,6 @@
 
 <p align="center">
     <a href="https://chemical-equipment-parameter-visual-nu.vercel.app/"><img src="https://img.shields.io/website-up-down-green-red/https/chemical-equipment-parameter-visual-nu.vercel.app.svg?label=Web" alt="Web Status"></a>
-    <a href="https://chemical-equipment-parameter-visualizer-unts.onrender.com/health/"><img src="https://img.shields.io/http/health/200/https/chemical-equipment-parameter-visualizer-unts.onrender.com/health?label=Backend" alt="Backend Health"></a>
     <a href="LICENSE"><img src="https://img.shields.io/github/license/mimo-to/Chemical-Equipment-Parameter-Visualizer" alt="License"></a>
     <img src="https://img.shields.io/badge/Python-3.9%2B-blue" alt="Python">
     <img src="https://img.shields.io/badge/React-18%2B-61DAFB" alt="React">
