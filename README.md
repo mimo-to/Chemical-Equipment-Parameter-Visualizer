@@ -13,10 +13,21 @@
     <em>Built with Django, React, and PyQt5.</em>
 </p>
 
+<p align="center">
+    <a href="https://chemical-equipment-parameter-visual-nu.vercel.app/"><img src="https://img.shields.io/website-up-down-green-red/https/chemical-equipment-parameter-visual-nu.vercel.app.svg?label=Web" alt="Web Status"></a>
+    <a href="https://chemical-equipment-parameter-visualizer-unts.onrender.com/health/"><img src="https://img.shields.io/http/health/200/https/chemical-equipment-parameter-visualizer-unts.onrender.com/health?label=Backend" alt="Backend Health"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/github/license/mimo-to/Chemical-Equipment-Parameter-Visualizer" alt="License"></a>
+    <img src="https://img.shields.io/badge/Python-3.9%2B-blue" alt="Python">
+    <img src="https://img.shields.io/badge/React-18%2B-61DAFB" alt="React">
+</p>
+<p align="center">
+    <br />
+    <em>🔧 Note: The backend badge uses data from the <code>/health/</code> endpoint. It will turn green when the database is active.</em>
+</p>
+
 <p>
-    <a href="https://chemical-equipment-parameter-visual-nu.vercel.app/" target="_blank"><strong>🚀 Launch Web Application</strong></a> • 
-    <a href="https://chemical-equipment-parameter-visualizer-unts.onrender.com" target="_blank"><strong>Backend API Root</strong></a> • 
-    <a href="https://github.com/mimo-to/Chemical-Equipment-Parameter-Visualizer/releases"><strong>Download Desktop Client</strong></a>
+    <a href="https://chemical-equipment-parameter-visual-nu.vercel.app/" target="_blank"><strong>Launch Web Application</strong></a> • 
+    <a href="https://github.com/mimo-to/Chemical-Equipment-Parameter-Visualizer/releases/tag/Final-Release"><strong>Download Desktop Client</strong></a>
 </p>
 
 </div>
@@ -25,7 +36,22 @@
 
 ---
 
-## 📸 Project Gallery
+## Project Objective
+
+This project was developed as part of the **FOSSEE Semester Internship – Web Application Screening Task**.
+
+The objective was to design a **single-backend, multi-client analytics system** that demonstrates:
+
+-   **Clean API Design**: RESTful architecture serving multiple platforms.
+-   **Deterministic Data Processing**: Server-side calculation for precision.
+-   **Consistent Visualization**: Unified data structures for Web and Desktop.
+-   **Production-Aware Constraints**: Handling real-world limitations (rate limiting, file validation).
+
+All features strictly follow the official problem statement, without scope inflation.
+
+---
+
+## Project Gallery
 
 A comprehensive view of the system's capabilities.
 
@@ -56,17 +82,66 @@ A comprehensive view of the system's capabilities.
     <td width="33%" align="center">
       <img src="Project_outcomes/Dataset_saved_history_page(last 5).png" width="100%" alt="History">
       <br />
-      <strong>Historical Archives</strong>
+      <strong>Upload History</strong>
     </td>
     <td width="33%" align="center" style="vertical-align: middle;">
-        <em>Vector-Graphic PDF Reports generated on-demand (see Doc links).</em>
+        <h3><a href="Project_outcomes/Generated_pdf_sample.pdf">Download Sample Report</a></h3>
+        <p><em>Vector-Graphic PDF with Charts</em></p>
     </td>
   </tr>
 </table>
 
 ---
 
-## 🏗️ Architecture & Process Flow
+## API Overview
+
+The backend provides a comprehensive REST API. For full details, Request/Response examples, and error codes, refer to the **[API Specification](backend/API_DOCUMENTATION.md)**.
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/login/` | Authenticates user and returns API Token. |
+| `POST` | `/api/upload/` | Ingests CSV, validates schema, and returns analysis. |
+| `GET` | `/api/history/` | Retrieves the last 5 uploaded datasets. |
+| `GET` | `/api/dataset/<id>/` | Fetches specific dataset details. |
+| `POST` | `/api/compare/` | Compares two datasets side-by-side. |
+| `GET` | `/api/report/<id>/` | Generates and downloads a specific PDF Report. |
+| `GET` | `/api/health/` | Server warming ping (mitigates cold starts). |
+
+---
+
+## Project Structure
+
+This project follows a strict Hub-and-Spoke architecture, separating concerns into three distinct directories.
+
+```text
+.
+├── backend/                  # Django REST API (The "Hub")
+│   ├── api/                  # Business Logic Application
+│   │   ├── views.py          # API Logic & Validation
+│   │   ├── serializers.py    # Data Transformation
+│   │   └── models.py         # Database Schema
+│   ├── config/               # Project Settings
+│   │   ├── settings.py       # Middleware & Security Config
+│   │   └── urls.py           # Route Definitions
+│   └── manage.py             # CLI Entry Point
+│
+├── web/                      # React Frontend (Web "Spoke")
+│   ├── src/
+│   │   ├── components/       # Reusable UI (Charts.jsx, Upload.jsx)
+│   │   ├── services/         # API Integration Layer
+│   │   └── App.jsx           # Routing Logic
+│   └── vite.config.js        # Build Optimization
+│
+├── desktop/                  # PyQt5 Client (Desktop "Spoke")
+│   ├── main.py               # Main Application Loop
+│   └── requirements.txt      # Executable Dependencies
+│
+└── Project_outcomes/         # Documentation & Assets
+```
+
+---
+
+## Architecture & Process Flow
 
 This project utilizes a **Single-Backend, Multi-Client** architecture to ensure data integrity across all interfaces. The flow is designed for zero-latency feedback and strict data validation.
 
@@ -81,74 +156,140 @@ graph TD
     
     subgraph Backend
     API --> Validator[Schema Validator]
-    Validator --> Engine[Pandas Analytics Engine]
+    Validator --> Engine[Data Processing Engine]
     Engine --> DB[(SQLite: Last 5 Datasets)]
-    Engine --> PDF[ReportLab PDF Engine]
+    Engine --> PDF[PDF Report Engine]
     end
 ```
 
 ### Data Pipeline
-1.  **Ingestion**: CSV files are uploaded via a secure, rate-limited endpoint.
-2.  **Validation**: Strict schema enforcement ensures only valid flowrate, pressure, and temperature data enters the system.
-3.  **Analysis**: The Pandas engine computes statistical aggregates (mean, min, max) in-memory to avoid floating-point inaccuracies.
-4.  **Storage**: Data is committed to SQLite with a constraint-based retention policy (last 5 uploads per user).
-5.  **Reporting**: On-demand generation of professional PDF reports using ReportLab.
+1.  **Ingest**: User uploads CSV via Drag-and-Drop.
+2.  **Validate**: Strict schema enforcement (Flowrate, Pressure, Temperature).
+3.  **Process**: server-side Pandas engine computes statistics (Mean, Min, Max).
+4.  **Store**: Data is saved to the user's isolated account.
+5.  **Report**: PDF engine generates vector-graphic reports on demand.
 
 ---
 
-## ⚡ Performance & Limits
+## Local Setup Guide
+
+Follow this guide to run the full stack (Backend, Web, and Desktop) on your local machine for evaluation.
+
+### Prerequisites
+*   Python 3.9+
+*   Node.js 18+
+*   Git
+
+### 1. Clone & Prepare
+```bash
+git clone https://github.com/mimo-to/Chemical-Equipment-Parameter-Visualizer.git
+cd Chemical-Equipment-Parameter-Visualizer
+```
+
+### 2. Backend Setup (The Core)
+```bash
+cd backend
+# Create Virtual Environment
+python -m venv venv
+
+# Activate (Windows)
+venv\Scripts\activate
+# Activate (Mac/Linux)
+source venv/bin/activate
+
+# Install Dependencies
+pip install -r requirements.txt
+
+# Initialize Database
+python manage.py migrate
+
+# Create Superuser (Optional)
+python manage.py createsuperuser
+
+# Start Server
+python manage.py runserver
+```
+*Server will start at `http://127.0.0.1:8000/`*
+
+### 3. Frontend Setup (Web Client)
+```bash
+# Open a new terminal
+cd web
+
+# Install Dependencies
+npm install
+
+# Start Development Server
+npm run dev
+```
+*Web App will start at `http://localhost:5173/`*
+
+### 4. Desktop Client Setup (Run from Source)
+For validators wishing to test the Desktop App without the `.exe`:
+```bash
+# Open a new terminal
+cd desktop
+
+# Install Dependencies (PyQt5)
+pip install -r requirements.txt
+
+# Run Application
+python main.py
+```
+
+---
+
+## Documentation Index
+
+| Document | Description |
+| :--- | :--- |
+| **[Deployment Guide](DEPLOYMENT.md)** | Instructions for Render, Vercel, and Desktop build. |
+| **[API Specification](backend/API_DOCUMENTATION.md)** | Detailed REST endpoint reference. |
+| **[Security Policy](SECURITY.md)** | details on Auth, Isolation, and Hardening. |
+| **[Testing Guide](TESTING.md)** | Comprehensive validation protocols. |
+
+---
+
+## Performance & Limits
 
 To ensure optimal performance on the demonstration tier, the following constraints are enforced.
 
 | Metric | Limit | Rationale |
 | :--- | :--- | :--- |
-| **CSV Size** | **10 MB** | Prevents memory overload on free-tier instances. |
+| **CSV Size** | **10 MB** | Optimization for free-tier instance memory constraints. |
 | **Analysis Time** | **< 1 Second** | Benchmark for datasets under 1,000 rows. |
-| **History Retention** | **5 Datasets** | Ensures database lightweight operation; strict FIFO rotation. |
-| **Upload Rate** | **10 Req/Min** | Prevents denial-of-service abuse. |
+| **History Retention** | **5 Datasets** | Strict FIFO rotation policy for efficient storage. |
 
 ---
 
-## 🧠 Key Design Decisions
+## Known Limitations
 
-*   **Django REST Framework**: Selected to provide a robust, standardized API layer that allows the React and PyQt5 clients to function identically.
-*   **Pandas for Analytics**: Python's Pandas library is used for all numerical computation to ensure deterministic results, avoiding client-side JavaScript math discrepancies.
-*   **Server-Side PDF Generation**: Reports are generated on the backend to guarantee consistent formatting and high-resolution output regardless of the client device.
-*   **Hub-and-Spoke Model**: By centralizing logic in the API, we reduce code duplication and simplify maintenance.
+Full transparency on what this system is *not* designed to do:
 
----
+*   **No Concurrent Multi-User Editing**: The system is designed for atomic, isolated user sessions.
+*   **Token-Based Auth**: Uses permanent tokens for simplicity. Production would require JWTs with refresh rotation.
+*   **SQLite Concurrency**: While sufficient for this demo, SQLite is not intended for high-scale concurrent writes in production.
+*   **Desktop Client**: Currently packaged and tested for Windows environments.
 
-## 📚 Documentation Hub
-
-Everything needed to deploy, audit, and understand the system.
-
-| Document | Description |
-| :--- | :--- |
-| **[Deployment Guide](DEPLOYMENT.md)** | Instructions for deploying the Backend (Render), Frontend (Vercel), and building the Desktop Client. |
-| **[API Specification](backend/API_DOCUMENTATION.md)** | Detailed reference for all REST endpoints, including request/response examples. |
-| **[Security Policy](SECURITY.md)** | Overview of the authentication model, data isolation, and production hardening recommendations. |
-| **[Sample Report](Generated_pdf_sample.pdf)** | A downloadable example of the vector-graphic PDF reports generated by this system. |
+> These are intentional trade-offs aligned with the screening scope.
 
 ---
 
-## Local Installation
+## Deployment Constraints (Render Free Tier)
 
-### Backend Setup
-```bash
-cd backend
-python -m venv venv
-# Windows: venv\Scripts\activate | Mac: source venv/bin/activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
-```
+This application is deployed on **Render's Free Tier** for demonstration purposes.
 
-### Frontend Setup
-```bash
-cd web
-npm install
-npm run dev
-```
+> **1. Cold Starts (Server Sleep)**
+> *   **Constraint**: The server spins down after 15 minutes of inactivity.
+> *   **Impact**: The **first request** may take **50-60 seconds**.
+> *   **Mitigation**: The frontend includes a "Warming Ping" triggered on the Login page.
+
+> **2. Ephemeral Filesystem (Data Loss)**
+> *   **Constraint**: Render's free instances do not have persistent storage.
+> *   **Impact**: **All Data is wiped** whenever the application is re-deployed.
+
+> **3. Upload Limits**
+> *   **Constraint**: 10MB User Upload Limit enforced by Nginx.
 
 ---
 

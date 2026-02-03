@@ -1,60 +1,68 @@
-# Testing Documentation
+# 🧪 Testing & Validation Guide
 
-## How to Run Tests
+This document outlines the validation protocols used to ensure the reliability and correctness of the Chemical Equipment Parameter Visualizer.
+
+---
+
+## 1. Automated Backend Tests
+
+The Django backend includes a suite of tests to verify core logic, authentication, and data processing.
+
+### Running the Test Suite
+To execute all automated tests, run the following command from the `backend/` directory:
 
 ```bash
-cd backend
-python manage.py test api.tests -v 2
+python manage.py test
 ```
 
-## Expected Output
+### Coverage Areas
+1.  **Authentication**:
+    *   Verifies user registration and token generation.
+    *   Ensures protected endpoints (`/upload/`, `/history/`) reject unauthenticated requests (401 Unauthorized).
+2.  **CSV Schema Validation**:
+    *   **Valid Uploads**: Confirms that correctly formatted CSVs are processed and stored.
+    *   **Invalid Uploads**: Checks that files missing required columns (`Flowrate`, `Pressure`) are rejected with `400 Bad Request`.
+    *   **Data Types**: Ensures non-numeric values in numeric columns trigger validation errors.
+3.  **Analytics Engine**:
+    *   Verifies that `Pandas` correctly calculates `mean`, `min`, and `max` for uploaded datasets.
+    *   Compares output against known deterministic values.
 
-- 16+ tests passing
-- CSV validation: 8 tests
-- View logic: 8 tests (login, upload, history, compare, report)
+---
 
-## Test Categories
+## 2. Manual End-to-End Verification
 
-### 1. CSV Upload Validation
-- ✅ Valid CSV with correct columns
-- ✅ Reject non-CSV files
-- ✅ Reject files >10MB
-- ✅ Reject CSV with missing columns
-- ✅ Reject CSV with invalid numeric values
+Evaluators can perform the following manual checks to validate the full system flow.
 
-### 2. Authentication
-- ✅ Login with valid credentials
-- ✅ Reject invalid credentials
-- ✅ Token persists across sessions
-- ✅ Logout clears token
+### Phase 1: Ingestion & Analysis
+1.  **Login**: Use the Web Client or Desktop App to log in.
+2.  **Upload**: Drag & Drop the provided `sample_equipment_data.csv`.
+3.  **Verify**:
+    *   A "Success" toast appears.
+    *   The "Analysis Results" dashboard automatically populates with Charts and Summary Statistics.
 
-### 3. Data Processing
-- ✅ Correct average calculations
-- ✅ Type distribution accurate
-- ✅ History limited to 5 entries
-- ✅ Oldest entries deleted
+### Phase 2: Cross-Client Consistency
+1.  **Web**: Upload a file via the React Web App.
+2.  **Desktop**: Open the PyQt5 Desktop App and navigate to "History".
+3.  **Verify**: The file uploaded via Web is immediately visible in the Desktop App, confirming the unified backend state.
 
-### 4. Dataset Comparison
-- ✅ Compare requires authentication
-- ✅ Rejects missing dataset IDs
-- ✅ Returns 404 for missing datasets
-- ✅ Returns comparison with diff values
+### Phase 3: PDF Reporting
+1.  **Action**: Click "Download Report" (Web) or "Export PDF" (Desktop).
+2.  **Verify**:
+    *   A PDF file is downloaded.
+    *   Open the PDF: It should contain a vector-graphic Title, Summary Table, and visual Charts (Pie/Bar).
 
-### 5. PDF Generation
-- ✅ Report contains all statistics
-- ✅ Table formatted correctly
-- ✅ Download triggers properly
+---
 
-### 6. Cross-Platform
-- ✅ Web app works on Chrome/Firefox/Edge
-- ✅ Desktop app runs on Windows/Linux
+## 3. Deployment Validation (Render)
 
-## Test Data
+### Cold Start Test
+1.  Navigate to the live deployment after >15 minutes of inactivity.
+2.  Attempt to Login.
+3.  **Observation**: The initial request may hang for ~50 seconds (Render Free Tier waking up).
+4.  **Result**: Subsequent requests should be instant (<500ms).
 
-Using `sample_equipment_data.csv`:
-- 15 rows
-- 5 equipment types
-- Expected averages:
-  - Flowrate: ~184.37
-  - Pressure: ~4.99
-  - Temperature: ~68.33
+### Data Persistence Test (Ephemeral)
+1.  Upload a file.
+2.  Wait for a manual redeploy or restart on the Render dashboard.
+3.  **Observation**: The data disappears.
+4.  **Confirmation**: This confirms the "Ephemeral Filesystem" constraint documented in the README.
