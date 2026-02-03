@@ -1,69 +1,94 @@
-# Deployment Guide
+# Deployment & Distribution Guide
 
-## 1. Environment Variables
+This document outlines the standard operating procedures for deploying the Chemical Equipment Parameter Visualizer across its hybrid architecture.
 
-### Backend (Render/Production)
-Set these environment variables in your deployment platform:
+## 1. System Components & Strategy
 
-*   `SECRET_KEY`: Generate a strong random string (e.g., using `openssl rand -base64 32`).
-*   `DEBUG`: `False`
-*   `ALLOWED_HOSTS`: Comma-separated list of allowed hosts (e.g., `your-app-name.onrender.com,api.yourdomain.com`).
-*   `CORS_ALLOWED_ORIGINS`: Comma-separated list of frontend origins (e.g., `https://your-frontend-app.vercel.app,http://localhost:5173`).
-*   `DATABASE_URL`: (Optional) Connection string if using PostgreSQL.
-*   `RENDER`: `true` (This triggers the use of the persistent SQLite disk at `/var/lib/data/db.sqlite3`).
-*   `SECURE_SSL_REDIRECT`: `True` (Recommended for production).
-*   `SESSION_COOKIE_SECURE`: `True` (Recommended).
-*   `CSRF_COOKIE_SECURE`: `True` (Recommended).
+The system relies on a **Hub-and-Spoke** architecture:
+*   **Central Backend**: Django REST API hosted on Render (Free Tier).
+*   **Web Client**: React/Vite application hosted on Vercel.
+*   **Desktop Client**: Python/PyQt5 executable distributed via GitHub Releases.
 
-### Frontend (Vercel/Netlify)
-Set this environment variable:
+---
 
-*   `VITE_API_URL`: The full URL of your deployed backend API (e.g., `https://your-app-name.onrender.com/api`).
+## 2. Environment Configuration
 
-## 2. Render Deployment (Backend)
+The application requires specific environment variables for security and connectivity.
 
-1.  **Create a New Web Service** on Render connected to your GitHub repository.
-2.  **Settings:**
-    *   **Runtime:** Python 3
-    *   **Build Command:** `./build.sh`
-    *   **Start Command:** `cd backend && gunicorn config.wsgi:application`
-    *   **Start Command:** `cd backend && gunicorn config.wsgi:application`
-    *   **Environment Variables:** Add all variables from the "Environment Variables" section above.
+### Backend (Render)
+| Variable | Description | Example / Recommended Value |
+| :--- | :--- | :--- |
+| `SECRET_KEY` | Cryptographic key for Django. | `django-insecure-...` (Use a strong generated string in production) |
+| `DEBUG` | Toggle debug mode. | `False` (Must be False in production) |
+| `ALLOWED_HOSTS` | Whitelist of host/domain names. | `*` or `your-app.onrender.com` |
+| `CORS_ALLOWED_ORIGINS` | Whitelist of client origins. | `https://your-frontend.vercel.app` |
+| `RENDER` | Signals Render environment. | `true` |
 
-3.  **Database Persistence (Crucial Step):**
-    *   **Free Tier (Ephemeral):** By default, Render's free tier has an "ephemeral" filesystem. This means **all data (users, datasets) will be deleted** whenever the server restarts or redeploys. This is acceptable for a portfolio demo to show functionality.
-    *   **Paid Tier (Persistent):** To save data permanently:
-        1.  Go to your Render Dashboard > Disks.
-        2.  Create a new Disk named `data` with mount path `/var/lib/data`.
-        3.  Attach it to your Web Service.
-        4.  Ensure the `RENDER` environment variable is set to `true`.
-        5.  The application will automatically detect the disk and save `db.sqlite3` there.
+### Frontend (Vercel)
+| Variable | Description | Value |
+| :--- | :--- | :--- |
+| `VITE_API_URL` | Base URL of the live backend. | `https://your-app-name.onrender.com/api` |
 
-## 3. Vercel Deployment (Frontend)
+---
 
-1.  **Import Project** in Vercel.
-2.  **Framework Preset:** Vite
-3.  **Root Directory:** `web`
-4.  **Build Command:** `npm run build`
-5.  **Output Directory:** `dist`
-6.  **Environment Variables:** Add `VITE_API_URL` pointing to your Render backend (e.g., `https://your-app.onrender.com/api`).
-7.  **Rewrites (IMPORTANT):**
-    *   Ensure a `vercel.json` exists in the `web` directory to handle React routing.
-    *   If missing, create it with:
-        ```json
-        {
-          "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
-        }
-        ```
+## 3. Backend Deployment (Render)
 
-## 4. Post-Deployment Verification
+We use Render's Python/Django runtime.
 
-1.  **Health Check:** Visit `https://your-backend-url/api/health/`. You should see `{"status": "ok"}`.
-    *   *Note: The trailing slash / is important for Django.*
-2.  **User Registration:** Try to register a new user in the deployed app.
-3.  **Desktop App Download:** Verify the download button on the Login page works and downloads the `.zip` or `.exe`.
-4.  **Data Persistence Test:** 
-    *   Upload a file.
-    *   In Render Dashboard, manually "Restart Service".
-    *   If on Free Tier: Data should be gone (Normal).
-    *   If using Disk: Data should persist.
+1.  **Service Creation**:
+    *   Initialize a new **Web Service** connected to this repository.
+    *   **Root Directory**: `backend`
+    *   **Runtime**: Python 3
+    *   **Build Command**: `pip install -r requirements.txt && python manage.py migrate`
+    *   **Start Command**: `gunicorn config.wsgi:application`
+
+2.  **Persistence Strategy (SQLite):**
+    *   **Ephemeral (Free Tier)**: Filesystem resets on deploy. Data is lost.
+    *   **Persistent (Paid/Disk)**: Attach a disk to `/var/lib/data` and ensure your `settings.py` reads `RENDER` env var to switch DB paths.
+
+---
+
+## 4. Frontend Deployment (Vercel)
+
+We use Vercel for high-performance static hosting.
+
+1.  **Project Import**:
+    *   Import repository to Vercel.
+    *   **Framework Preset**: Vite
+    *   **Root Directory**: `web`
+2.  **Build Configuration**:
+    *   **Build Command**: `npm run build`
+    *   **Output Directory**: `dist`
+3.  **Routing**:
+    *   Ensure `vercel.json` dictates rewrites to `index.html` for client-side routing.
+
+---
+
+## 5. Desktop Client Distribution
+
+The desktop client allows a native experience without a browser wrapper.
+
+### Building the Executable (Windows)
+1.  Navigate to the `desktop/` directory.
+2.  Install dependencies: `pip install -r requirements.txt`.
+3.  Run PyInstaller:
+    ```bash
+    pyinstaller --noconsole --onefile --name="ChemicalVisualizer" main.py
+    ```
+4.  The artifact `ChemicalVisualizer.exe` will be generated in `dist/`.
+
+### Releasing
+1.  Create a **GitHub Release** (e.g., `v1.0.0`).
+2.  Attach `ChemicalVisualizer.exe` as a binary asset.
+3.  Users can download and run this directly.
+
+---
+
+## 6. Verification Protocol
+
+After deployment, perform these standard checks:
+
+1.  **API Health**: `GET /api/health/` -> Returns `200 OK`.
+2.  **Authentication**: Register a new user and login.
+3.  **Cross-Origin Resource Sharing (CORS)**: Verify the Web App can fetch data from the Backend.
+4.  **End-to-End Flow**: Upload a valid CSV and generate a PDF Report.

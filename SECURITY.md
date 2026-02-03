@@ -1,30 +1,34 @@
 # Security Policy
 
-## Authentication Model
+## Authentication Overview
 
-The Chemical Equipment Parameter Visualizer uses **Token-Based Authentication** powered by the Django REST Framework (DRF).
+The Chemical Equipment Parameter Visualizer implements a strict **Token-Based Authentication** model using Django REST Framework (DRF).
 
-*   **Mechanism**: Every request to a protected endpoint must include the `Authorization` header.
+*   **Type**: Token Auth (DRF Default).
+*   **Scope**: Global. All data modification/retrieval endpoints require a valid token in the header.
     ```http
     Authorization: Token <your_generated_token>
     ```
-*   **User Isolation**: All data endpoints (`/history`, `/report`, etc.) are filtered by `request.user`. A user strictly cannot access, view, or compare datasets belonging to another user.
+*   **Isolation**: We implement **Row-Level Security** at the View layer. All database queries are filtered by `request.user` (e.g., `EquipmentDataset.objects.filter(user=request.user)`). This guarantees that user A can strictly never access user B's data.
 
-## Known Limitations
+## Known Security Limitations
 
-### 1. Token Expiry
-*   Current implementation uses permanent tokens for simplicity in this demo environment.
-*   **Recommendation for Production**: Implement JWT (JSON Web Tokens) with short-lived access tokens and refresh tokens.
+### Security Constraints
 
-### 2. Rate Limiting
-*   **Current User Upload Limit**: 10 requests / minute.
-*   **Global Rate Limits**: Not currently configured for Nginx/Load Balancer level.
+1.  **Permanent Tokens**: Tokens do not expire. In a real-world scenario, this poses a risk if a token is leaked.
+2.  **No Refresh Flow**: There is no refresh token mechanism.
+3.  **SQLite Encryption**: Data is stored in a standard SQLite file without encryption-at-rest.
 
-### 3. Database Encryption
-*   **Storage**: Data is stored in a standard SQLite file.
-*   **Implication**: This is acceptable for a demo/student project but strictly **not** recommended for production storing sensitive industrial data.
-*   **Recommendation**: Use PostgreSQL with encryption-at-rest (TDE) for production.
+## What is NOT Implemented
 
-## Reporting Vulnerabilities
+*   **Multi-Factor Authentication (MFA)**: Not required for this scope.
+*   **Role-Based Access Control (RBAC)**: All users have equal "User" level permissions. There are no Admin/Manager roles exposed to the frontend.
 
-This is an academic/internship submission. If you discover a security vulnerability, please open an issue in the repository.
+## Production Hardening Recommendations
+
+To move this system to a high-security production environment, we recommend:
+
+1.  **Switch to JWT**: Migrate from DRF Token Auth to `SimpleJWT` for short-lived access tokens and secure refresh rotation.
+2.  **Database Upgrade**: Migrate from SQLite to **PostgreSQL** with TDE (Transparent Data Encryption) enabled.
+3.  **HTTPS Enforcement**: Ensure strict HSTS and SSL/TLS termination at the load balancer level (handled by Render automatically).
+4.  **Rate Limiting**: Implement Redis-based throttling for the `/upload/` endpoint to prevent DoS attacks.

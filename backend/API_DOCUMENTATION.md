@@ -1,150 +1,145 @@
 # API Documentation
 
+This documentation details the RESTful endpoints provided by the Django backend.
+
 ## Base URL
-Local: `http://127.0.0.1:8000/api`
-Production: `https://<your-render-app>.onrender.com/api`
+*   **Local**: `http://127.0.0.1:8000/api`
+*   **Production**: `https://<your-render-app>.onrender.com/api`
 
 ---
 
-## 🟢 System Health
+## 1. Upload Dataset
 
-### Check System Status
-**GET /health/**  
-**HEAD /health/**
-*   **Auth Required**: No
-*   **Description**: Used by frontend for "Server Warming" ping to wake up free-tier instances.
-*   **Response (200 OK)**:
-    ```json
-    { "status": "ok" }
-    ```
+**POST** `/upload/`
+
+Uploads a CSV file for analysis. Triggers validation and automatic statistical computation.
+
+*   **Auth Required**: Yes (`Authorization: Token <token>`)
+*   **Content-Type**: `multipart/form-data`
+
+### Sample Request
+```http
+POST /api/upload/ HTTP/1.1
+Authorization: Token <your_token>
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="equipment_data.csv"
+Content-Type: text/csv
+
+(CSV Content Here)
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+```
+
+### Success Response (201 Created)
+```json
+{
+  "id": 15,
+  "filename": "equipment_data.csv",
+  "total_count": 100,
+  "uploaded_at": "2026-02-03T12:00:00Z",
+  "averages": {
+    "Flowrate": 45.2,
+    "Pressure": 101.3,
+    "Temperature": 25.4
+  }
+}
+```
+
+### Error Response (400 Bad Request)
+```json
+{
+  "error": "Missing required column: Flowrate"
+}
+```
 
 ---
 
-## 🔐 Authentication
+## 2. Get Upload History
 
-### Register New User
-**POST /register/**
-*   **Auth Required**: No
-*   **Body**:
-    ```json
-    {
-        "username": "engineer1",
-        "password": "securepassword123",
-        "email": "engineer@example.com"
-    }
-    ```
-*   **Response (201 Created)**:
-    ```json
-    {
-        "token": "<your_generated_token>",
-        "user_id": 1,
-        "username": "engineer1"
-    }
-    ```
+**GET** `/history/`
+
+Retrieves the authenticated user's last 5 datasets.
+
+*   **Auth Required**: Yes
+*   **Content-Type**: `application/json`
+
+### Sample Request
+```http
+GET /api/history/ HTTP/1.1
+Authorization: Token <your_token>
+```
+
+### Success Response (200 OK)
+```json
+[
+  {
+    "id": 15,
+    "filename": "batch_A.csv",
+    "uploaded_at": "..."
+  },
+  {
+    "id": 14,
+    "filename": "batch_B.csv",
+    "uploaded_at": "..."
+  }
+]
+```
+
+---
+
+## 3. Compare Datasets
+
+**POST** `/compare/`
+
+Compares two datasets side-by-side.
+
+*   **Auth Required**: Yes
+*   **Content-Type**: `application/json`
+
+### Sample Request
+```json
+{
+  "dataset1": 15,
+  "dataset2": 14
+}
+```
+
+### Success Response (200 OK)
+```json
+{
+  "dataset1": { "filename": "batch_A.csv", "averages": { "Flowrate": 45 } },
+  "dataset2": { "filename": "batch_B.csv", "averages": { "Flowrate": 40 } },
+  "comparison": {
+    "Flowrate_diff": 5,
+    "Pressure_diff": 0
+  }
+}
+```
+
+---
+
+## 4. Authentication
+
+### Register
+**POST** `/register/`
+
+*   **Body**: `{"username": "user", "password": "pw", "email": "e@mail.com"}`
+*   **Success (201)**: `{"token": "...", "user_id": 1}`
 
 ### Login
-**POST /login/**
+**POST** `/login/`
+
+*   **Body**: `{"username": "user", "password": "pw"}`
+*   **Success (200)**: `{"token": "...", "user_id": 1}`
+
+---
+
+## 5. System Health
+
+**GET/HEAD** `/health/`
+
+Used for "Server Warming" to mitigate Render Free Tier cold starts.
+
 *   **Auth Required**: No
-*   **Body**:
-    ```json
-    {
-        "username": "engineer1",
-        "password": "securepassword123"
-    }
-    ```
-*   **Response (200 OK)**:
-    ```json
-    {
-        "token": "<your_generated_token>",
-        "user_id": 1,
-        "username": "engineer1"
-    }
-    ```
-
----
-
-## 📂 Data Management
-
-### Upload Dataset
-**POST /upload/**
-*   **Auth Required**: Yes (`Authorization: Token <key>`)
-*   **Rate Limit**: 10 requests per minute per user.
-*   **Body**: `Multipart/Form-Data`
-    *   `file`: (Binary CSV file)
-*   **CSV Requirements**:
-    *   Max Size: 10MB
-    *   Required Columns: `Equipment Name`, `Timestamp`, `Flowrate`, `Pressure`, `Temperature`, `Type`
-*   **Response (201 Created)**:
-    ```json
-    {
-        "id": 15,
-        "filename": "batch_process_data.csv",
-        "total_count": 100,
-        "avg_flowrate": 45.2,
-        ...
-    }
-    ```
-*   **Errors**:
-    *   `400 Bad Request`: Invalid CSV structure, missing columns, or non-numeric data.
-
-### Get Upload History
-**GET /history/**
-*   **Auth Required**: Yes
-*   **Description**: Retrieves the last 5 uploads for the authenticated user.
-*   **Response (200 OK)**: Array of Dataset objects.
-
-### Get Dataset Detail
-**GET /dataset/<id>/**
-*   **Auth Required**: Yes
-*   **Response (200 OK)**:
-    ```json
-    {
-        "total_count": 100,
-        "averages": { "flowrate": 45.2, ... },
-        "type_distribution": { "Pump": 12, "Valve": 8 }
-    }
-    ```
-
----
-
-## 📊 Analysis & Reporting
-
-### Get Visualization Data
-**GET /dataset/<id>/visualization/**
-*   **Auth Required**: Yes
-*   **Description**: Returns formatted data for specific frontend charts.
-*   **Response (200 OK)**:
-    ```json
-    {
-        "type_distribution": { "labels": ["Pump", "Tank"], "data": [10, 5] },
-        "averages": { "labels": ["Flowrate", ...], "data": [45.2, ...], "min": [...], "max": [...] }
-    }
-    ```
-
-### Compare Datasets
-**POST /compare/**
-*   **Auth Required**: Yes
-*   **Body**:
-    ```json
-    {
-        "dataset1": 15,
-        "dataset2": 14
-    }
-    ```
-*   **Response (200 OK)**:
-    ```json
-    {
-        "dataset1": { ... },
-        "dataset2": { ... },
-        "comparison": {
-            "flowrate_diff": 1.5,
-            "pressure_diff": -0.2,
-            ...
-        }
-    }
-    ```
-
-### Download PDF Report
-**GET /report/<id>/**
-*   **Auth Required**: Yes
-*   **Response (200 OK)**: Binary Blob (`application/pdf`)
+*   **Response**: `{"status": "ok"}`
