@@ -26,9 +26,7 @@
 </p>
 
 </div>
-
 <br />
-
 ---
 
 ## Project Objective
