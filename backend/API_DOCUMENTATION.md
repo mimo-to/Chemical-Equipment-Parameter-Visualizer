@@ -88,7 +88,65 @@ Authorization: Token <your_token>
 
 ---
 
-## 3. Compare Datasets
+## 3. Get Dataset Detail
+
+**GET** `/dataset/<id>/`
+
+Retrieves detailed statistics for a specific dataset.
+
+*   **Auth Required**: Yes
+*   **Content-Type**: `application/json`
+
+### Sample Request
+```http
+GET /api/dataset/15/ HTTP/1.1
+Authorization: Token <your_token>
+```
+
+### Success Response (200 OK)
+```json
+{
+  "id": 15,
+  "total_count": 100,
+  "averages": { "Flowrate": 45.2, "Pressure": 101.3 },
+  "type_distribution": { "Pump": 12, "Valve": 8 }
+}
+```
+
+---
+
+## 4. Get Visualization Data
+
+**GET** `/dataset/<id>/visualization/`
+
+Returns formatted data specifically for frontend Chart.js rendering.
+
+*   **Auth Required**: Yes
+*   **Content-Type**: `application/json`
+
+### Sample Request
+```http
+GET /api/dataset/15/visualization/ HTTP/1.1
+Authorization: Token <your_token>
+```
+
+### Success Response (200 OK)
+```json
+{
+  "type_distribution": {
+    "labels": ["Pump", "Tank"],
+    "data": [10, 5]
+  },
+  "averages": {
+    "labels": ["Flowrate", "Pressure"],
+    "data": [45.2, 101.3]
+  }
+}
+```
+
+---
+
+## 5. Compare Datasets
 
 **POST** `/compare/`
 
@@ -119,23 +177,63 @@ Compares two datasets side-by-side.
 
 ---
 
-## 4. Authentication
+## 6. Download PDF Report
+
+**GET** `/report/<id>/`
+
+Generates a vector-graphic PDF report.
+
+*   **Auth Required**: Yes
+*   **Response**: Binary Blob (`application/pdf`)
+
+---
+
+## 7. Authentication
 
 ### Register
 **POST** `/register/`
 
-*   **Body**: `{"username": "user", "password": "pw", "email": "e@mail.com"}`
-*   **Success (201)**: `{"token": "...", "user_id": 1}`
+### Sample Request
+```json
+{
+  "username": "engineer1",
+  "password": "securepassword123",
+  "email": "engineer@example.com"
+}
+```
+
+### Success Response (201 Created)
+```json
+{
+  "token": "<your_generated_token>",
+  "user_id": 1,
+  "username": "engineer1"
+}
+```
 
 ### Login
 **POST** `/login/`
 
-*   **Body**: `{"username": "user", "password": "pw"}`
-*   **Success (200)**: `{"token": "...", "user_id": 1}`
+### Sample Request
+```json
+{
+  "username": "engineer1",
+  "password": "securepassword123"
+}
+```
+
+### Success Response (200 OK)
+```json
+{
+  "token": "<your_generated_token>",
+  "user_id": 1,
+  "username": "engineer1"
+}
+```
 
 ---
 
-## 5. System Health
+## 8. System Health
 
 **GET/HEAD** `/health/`
 

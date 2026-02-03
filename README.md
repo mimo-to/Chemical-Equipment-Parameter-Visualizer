@@ -1,119 +1,155 @@
-# Chemical Equipment Parameter Visualizer
 
-**A full-stack analytical platform for visualizing and comparing chemical equipment data.**
+<div align="center">
 
-> 🚀 **Live Demo:** [chemical-equipment-parameter-visual-nu.vercel.app](https://chemical-equipment-parameter-visual-nu.vercel.app)
-> _(Note: Live demo uses ephemeral storage; data resets on restart.)_
+<h1>Chemical Equipment Parameter Visualizer</h1>
+
+<p>
+    <strong>Precision Engineering Meets Modern Web Development</strong>
+</p>
+
+<p>
+    A high-performance industrial analytics platform designed to ingest, visualize, and report on critical chemical process data.
+    <br />
+    <em>Built with Django, React, and PyQt5.</em>
+</p>
+
+<p>
+    <a href="https://chemical-equipment-parameter-visual-nu.vercel.app/" target="_blank"><strong>🚀 Launch Web Application</strong></a> • 
+    <a href="https://chemical-equipment-parameter-visualizer-unts.onrender.com" target="_blank"><strong>Backend API Root</strong></a> • 
+    <a href="https://github.com/mimo-to/Chemical-Equipment-Parameter-Visualizer/releases"><strong>Download Desktop Client</strong></a>
+</p>
+
+</div>
+
+<br />
 
 ---
 
-## 🏛️ Architecture Overview
+## 📸 Project Gallery
 
-This project implements a **stateless, token-based REST API** architecture designed for scalability and clear separation of concerns.
+A comprehensive view of the system's capabilities.
+
+<table width="100%">
+  <tr>
+    <td width="33%" align="center">
+      <img src="Project_outcomes/Login_page_and_desktop_client_download.png" width="100%" alt="Login Page">
+      <br />
+      <strong>Secure Authentication</strong>
+    </td>
+    <td width="33%" align="center">
+      <img src="Project_outcomes/The_csv_upload_page.png" width="100%" alt="Upload Page">
+      <br />
+      <strong>Robust Data Ingestion</strong>
+    </td>
+    <td width="33%" align="center">
+      <img src="Project_outcomes/Data_visualization_page.png" width="100%" alt="Dashboard">
+      <br />
+      <strong>Real-time Analytics</strong>
+    </td>
+  </tr>
+  <tr>
+    <td width="33%" align="center">
+      <img src="Project_outcomes/Data_comparison_page.png" width="100%" alt="Comparison">
+      <br />
+      <strong>Dataset Comparison</strong>
+    </td>
+    <td width="33%" align="center">
+      <img src="Project_outcomes/Dataset_saved_history_page(last 5).png" width="100%" alt="History">
+      <br />
+      <strong>Historical Archives</strong>
+    </td>
+    <td width="33%" align="center" style="vertical-align: middle;">
+        <em>Vector-Graphic PDF Reports generated on-demand (see Doc links).</em>
+    </td>
+  </tr>
+</table>
+
+---
+
+## 🏗️ Architecture & Process Flow
+
+This project utilizes a **Single-Backend, Multi-Client** architecture to ensure data integrity across all interfaces. The flow is designed for zero-latency feedback and strict data validation.
 
 ```mermaid
 graph TD
-    Client[Web & Desktop Clients] -->|REST API + Token| API[Django REST Framework]
-    API -->|Validation & Logic| Service[Data Service]
-    Service -->|Storage| DB[(SQLite / PostgreSQL)]
-    Service -->|Analysis| Pandas[Pandas Engine]
-    Service -->|Visualization| ReportLab[PDF Generation]
+    User([User])
+    User -->|Browser| Web[React Web App]
+    User -->|Exe| Desk[Desktop Client]
+    
+    Web -->|JSON/HTTP| API[Django REST API]
+    Desk -->|JSON/HTTP| API
+    
+    subgraph Backend
+    API --> Validator[Schema Validator]
+    Validator --> Engine[Pandas Analytics Engine]
+    Engine --> DB[(SQLite: Last 5 Datasets)]
+    Engine --> PDF[ReportLab PDF Engine]
+    end
 ```
 
-### Core Flow
-1.  **Ingestion:** User uploads CSV → Backend validates schema & content type.
-2.  **Processing:** Pandas processes raw data to compute statistical averages and distributions.
-3.  **Storage:** Metadata and summary stats stored in DB; Raw JSON/CSV cached for retrieval.
-4.  **Consumption:** Frontend requests JSON for interactive charts or Binary PDF for reporting.
+### Data Pipeline
+1.  **Ingestion**: CSV files are uploaded via a secure, rate-limited endpoint.
+2.  **Validation**: Strict schema enforcement ensures only valid flowrate, pressure, and temperature data enters the system.
+3.  **Analysis**: The Pandas engine computes statistical aggregates (mean, min, max) in-memory to avoid floating-point inaccuracies.
+4.  **Storage**: Data is committed to SQLite with a constraint-based retention policy (last 5 uploads per user).
+5.  **Reporting**: On-demand generation of professional PDF reports using ReportLab.
 
 ---
 
-## 🛠️ Design Decisions
+## ⚡ Performance & Limits
 
-We prioritized **reliability, consistency, and user experience** in our engineering choices:
+To ensure optimal performance on the demonstration tier, the following constraints are enforced.
 
-*   **Server-Side Validation:** All CSV parsing and validation happens on the backend (Pandas) rather than the client. This ensures data consistency regardless of whether the upload comes from the Web App, Desktop App, or direct API calls.
-*   **Stateless Authentication:** Token-based Auth (DRF) allows the backend to serve both React (Web) and PyQt5 (Desktop) clients uniformly without session management complexity.
-*   **Storage Optimization:** A "Last-5" dataset retention policy is enforced per user. This prevents storage bloat while keeping recent history available for comparison, optimizing for the constraints of a demo environment.
-*   **SQLite Database:** Chosen for development simplicity and ease of local replication. The Django ORM allows seamless switching to PostgreSQL for production (as configured in `settings.py`).
+| Metric | Limit | Rationale |
+| :--- | :--- | :--- |
+| **CSV Size** | **10 MB** | Prevents memory overload on free-tier instances. |
+| **Analysis Time** | **< 1 Second** | Benchmark for datasets under 1,000 rows. |
+| **History Retention** | **5 Datasets** | Ensures database lightweight operation; strict FIFO rotation. |
+| **Upload Rate** | **10 Req/Min** | Prevents denial-of-service abuse. |
 
 ---
 
-## ⚠️ Known Limitations
+## 🧠 Key Design Decisions
 
-In the interest of transparency, the current V1.0 release has the following constraints:
-*   **File Size:** Optimized for CSV files under 10MB to ensure sub-second response times on standard concurrent requests.
-*   **Concurrency:** Large simultaneous uploads are queue-bound by the Gunicorn worker count (default: 4).
-*   **Authentication:** Utilizes local database authentication. 
+*   **Django REST Framework**: Selected to provide a robust, standardized API layer that allows the React and PyQt5 clients to function identically.
+*   **Pandas for Analytics**: Python's Pandas library is used for all numerical computation to ensure deterministic results, avoiding client-side JavaScript math discrepancies.
+*   **Server-Side PDF Generation**: Reports are generated on the backend to guarantee consistent formatting and high-resolution output regardless of the client device.
+*   **Hub-and-Spoke Model**: By centralizing logic in the API, we reduce code duplication and simplify maintenance.
+
 ---
 
-## 🚀 Quick Start
+## 📚 Documentation Hub
 
-### Prerequisites
-*   Python 3.8+
-*   Node.js 18+
+Everything needed to deploy, audit, and understand the system.
 
-### 1. Backend Setup
+| Document | Description |
+| :--- | :--- |
+| **[Deployment Guide](DEPLOYMENT.md)** | Instructions for deploying the Backend (Render), Frontend (Vercel), and building the Desktop Client. |
+| **[API Specification](backend/API_DOCUMENTATION.md)** | Detailed reference for all REST endpoints, including request/response examples. |
+| **[Security Policy](SECURITY.md)** | Overview of the authentication model, data isolation, and production hardening recommendations. |
+| **[Sample Report](Generated_pdf_sample.pdf)** | A downloadable example of the vector-graphic PDF reports generated by this system. |
+
+---
+
+## Local Installation
+
+### Backend Setup
 ```bash
 cd backend
 python -m venv venv
-# Windows: venv\Scripts\activate | Mac/Linux: source venv/bin/activate
+# Windows: venv\Scripts\activate | Mac: source venv/bin/activate
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
 ```
 
-### 2. Frontend Setup
+### Frontend Setup
 ```bash
 cd web
 npm install
 npm run dev
 ```
 
-### 3. Desktop App
-```bash
-cd desktop
-pip install -r requirements.txt
-python main.py
-```
-*(Or download the standalone executable from Releases)*
-
 ---
 
-## 📚 Documentation
-
-Detailed documentation for reviewers and developers:
-
-*   **[📂 API Documentation](backend/API_DOCUMENTATION.md)** - Endpoints, Request/Response examples.
-*   **[☁️ Deployment Guide](/DEPLOYMENT.md)** - Production setup for Render/Vercel.
-
----
-
-## 🧪 Testing
-
-We employ a comprehensive test suite covering Models, Views, and Validation logic.
-
-```bash
-cd backend
-python manage.py test api.tests
-```
-
-**Key Test Areas:**
-*   `test_validators.py`: Ensures only valid CSVs with correct columns are processed.
-*   `test_views.py`: Verifies API response structures and status codes.
-
----
-
-## 🔧 Tech Stack
-
-| Component | Technology | Reason |
-|-----------|------------|--------|
-| **Backend** | Django REST Framework | Robust serialization & security features. |
-| **Analysis** | Pandas | High-performance data manipulation. |
-| **Web** | React + Vite | Fast HMR and efficient component-based UI. |
-| **Desktop** | PyQt5 | Native look-and-feel cross-platform app. |
-| **Reporting** | ReportLab | Programmatic PDF generation with vector charts. |
-
----
-
-*Note: The `web/public/*.zip` file in the repo is an artifact of the build process.*
+**© 2026 Chemical Equipment Parameter Visualizer**
