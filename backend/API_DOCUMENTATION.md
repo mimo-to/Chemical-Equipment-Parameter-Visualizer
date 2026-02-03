@@ -1,144 +1,150 @@
-# Backend API Documentation
+# API Documentation
 
-This document outlines the REST API endpoints available in the Chemical Equipment Parameter Visualizer backend.
-
-**Base URL:** `/api/`
-**Authentication:** Token-based (Header: `Authorization: Token <key>`)
-
-## Authentication
-
-### 1. Login
-- **Endpoint:** `/api/login/`
-- **Method:** `POST`
-- **Description:** Authenticates a user and returns an auth token.
-- **Request Body:**
-  ```json
-  {
-    "username": "user1",
-    "password": "password123"
-  }
-  ```
-- **Response (200 OK):**
-  ```json
-  {
-    "token": "9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b",
-    "user_id": 1,
-    "username": "user1"
-  }
-  ```
-
-### 2. Register
-- **Endpoint:** `/api/register/`
-- **Method:** `POST`
-- **Description:** Creates a new user account.
-- **Request Body:**
-  ```json
-  {
-    "username": "newuser",
-    "password": "password123",
-    "email": "optional@example.com"
-  }
-  ```
-- **Response (201 Created):**
-  ```json
-  {
-    "token": "...",
-    "user_id": 2,
-    "username": "newuser"
-  }
-  ```
+## Base URL
+Local: `http://127.0.0.1:8000/api`
+Production: `https://<your-render-app>.onrender.com/api`
 
 ---
 
-## Data Management
+## 🟢 System Health
 
-### 3. Upload Dataset
-- **Endpoint:** `/api/upload/`
-- **Method:** `POST`
-- **Permissions:** IsAuthenticated
-- **Rate Limit:** 10 requests / minute
-- **Description:** Uploads a CSV file for analysis. The server parses the file, calculates statistics, and stores it.
-- **Request Body:** `multipart/form-data`
-  - `file`: (File, .csv)
-- **Response (201 Created):**
-  ```json
-  {
-    "id": 15,
-    "filename": "equipment_data.csv",
-    "uploaded_at": "2024-05-20T10:30:00Z",
-    "total_count": 50,
-    "avg_flowrate": 105.5,
-    "avg_pressure": 12.3,
-    "avg_temperature": 45.2,
-    "type_distribution": {"Pump": 20, "Valve": 30}
-  }
-  ```
-
-### 4. Get Upload History
-- **Endpoint:** `/api/history/`
-- **Method:** `GET`
-- **Description:** Retrieves the last 5 uploaded datasets for the authenticated user.
-- **Response (200 OK):** Array of dataset objects (same structure as Upload response).
-
-### 5. Get Dataset Detail
-- **Endpoint:** `/api/dataset/<id>/`
-- **Method:** `GET`
-- **Description:** Retrieves summary statistics for a specific dataset.
-- **Response (200 OK):**
-  ```json
-  {
-    "total_count": 50,
-    "averages": {
-      "flowrate": 105.5,
-      "pressure": 12.3,
-      "temperature": 45.2
-    },
-    "type_distribution": {"Pump": 20, "Valve": 30}
-  }
-  ```
-
-### 6. Get Visualization Data
-- **Endpoint:** `/api/visualize/<id>/`
-- **Method:** `GET`
-- **Description:** Returns formatted data for frontend charting (Chart.js / Recharts).
-- **Response (200 OK):**
-  ```json
-  {
-    "averages": { "labels": [...], "data": [...], "min": [...], "max": [...] },
-    "type_distribution": { "labels": [...], "data": [...] }
-  }
-  ```
+### Check System Status
+**GET /health/**  
+**HEAD /health/**
+*   **Auth Required**: No
+*   **Description**: Used by frontend for "Server Warming" ping to wake up free-tier instances.
+*   **Response (200 OK)**:
+    ```json
+    { "status": "ok" }
+    ```
 
 ---
 
-## Analytics & Reporting
+## 🔐 Authentication
 
-### 7. Compare Datasets
-- **Endpoint:** `/api/compare/`
-- **Method:** `POST`
-- **Description:** Compares two datasets and returns the difference in average parameters.
-- **Request Body:**
-  ```json
-  {
-    "dataset1": 15,
-    "dataset2": 14
-  }
-  ```
-- **Response (200 OK):**
-  ```json
-  {
-    "dataset1": { ... },
-    "dataset2": { ... },
-    "comparison": {
-      "flowrate_diff": 5.2,
-      "pressure_diff": -1.1,
-      "temperature_diff": 0.5
+### Register New User
+**POST /register/**
+*   **Auth Required**: No
+*   **Body**:
+    ```json
+    {
+        "username": "engineer1",
+        "password": "securepassword123",
+        "email": "engineer@example.com"
     }
-  }
-  ```
+    ```
+*   **Response (201 Created)**:
+    ```json
+    {
+        "token": "<your_generated_token>",
+        "user_id": 1,
+        "username": "engineer1"
+    }
+    ```
 
-### 8. Generate PDF Report
-- **Endpoint:** `/api/report/<id>/`
-- **Method:** `GET`
-- **Description:** Generates and downloads a comprehensive PDF report for the dataset, including metadata, statistics tables, and charts.
-- **Response:** Binary PDF file (`application/pdf`).
+### Login
+**POST /login/**
+*   **Auth Required**: No
+*   **Body**:
+    ```json
+    {
+        "username": "engineer1",
+        "password": "securepassword123"
+    }
+    ```
+*   **Response (200 OK)**:
+    ```json
+    {
+        "token": "<your_generated_token>",
+        "user_id": 1,
+        "username": "engineer1"
+    }
+    ```
+
+---
+
+## 📂 Data Management
+
+### Upload Dataset
+**POST /upload/**
+*   **Auth Required**: Yes (`Authorization: Token <key>`)
+*   **Rate Limit**: 10 requests per minute per user.
+*   **Body**: `Multipart/Form-Data`
+    *   `file`: (Binary CSV file)
+*   **CSV Requirements**:
+    *   Max Size: 10MB
+    *   Required Columns: `Equipment Name`, `Timestamp`, `Flowrate`, `Pressure`, `Temperature`, `Type`
+*   **Response (201 Created)**:
+    ```json
+    {
+        "id": 15,
+        "filename": "batch_process_data.csv",
+        "total_count": 100,
+        "avg_flowrate": 45.2,
+        ...
+    }
+    ```
+*   **Errors**:
+    *   `400 Bad Request`: Invalid CSV structure, missing columns, or non-numeric data.
+
+### Get Upload History
+**GET /history/**
+*   **Auth Required**: Yes
+*   **Description**: Retrieves the last 5 uploads for the authenticated user.
+*   **Response (200 OK)**: Array of Dataset objects.
+
+### Get Dataset Detail
+**GET /dataset/<id>/**
+*   **Auth Required**: Yes
+*   **Response (200 OK)**:
+    ```json
+    {
+        "total_count": 100,
+        "averages": { "flowrate": 45.2, ... },
+        "type_distribution": { "Pump": 12, "Valve": 8 }
+    }
+    ```
+
+---
+
+## 📊 Analysis & Reporting
+
+### Get Visualization Data
+**GET /dataset/<id>/visualization/**
+*   **Auth Required**: Yes
+*   **Description**: Returns formatted data for specific frontend charts.
+*   **Response (200 OK)**:
+    ```json
+    {
+        "type_distribution": { "labels": ["Pump", "Tank"], "data": [10, 5] },
+        "averages": { "labels": ["Flowrate", ...], "data": [45.2, ...], "min": [...], "max": [...] }
+    }
+    ```
+
+### Compare Datasets
+**POST /compare/**
+*   **Auth Required**: Yes
+*   **Body**:
+    ```json
+    {
+        "dataset1": 15,
+        "dataset2": 14
+    }
+    ```
+*   **Response (200 OK)**:
+    ```json
+    {
+        "dataset1": { ... },
+        "dataset2": { ... },
+        "comparison": {
+            "flowrate_diff": 1.5,
+            "pressure_diff": -0.2,
+            ...
+        }
+    }
+    ```
+
+### Download PDF Report
+**GET /report/<id>/**
+*   **Auth Required**: Yes
+*   **Response (200 OK)**: Binary Blob (`application/pdf`)
