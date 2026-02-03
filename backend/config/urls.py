@@ -28,5 +28,6 @@ urlpatterns = [
     path('api/dataset/<int:pk>/', get_dataset_detail),
     path('api/dataset/<int:pk>/visualization/', get_dataset_visualization),
     path('api/report/<int:pk>/', generate_report),
+    path('api/health/', health_check),
     path('health/', health_check),
 ]

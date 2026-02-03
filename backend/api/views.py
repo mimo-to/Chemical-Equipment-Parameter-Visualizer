@@ -28,7 +28,7 @@ from .constants import HISTORY_LIMIT
 from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
 
-@api_view(['GET'])
+@api_view(['GET', 'HEAD'])
 @permission_classes([AllowAny])
 def health_check(request):
     return Response({'status': 'ok'}, status=status.HTTP_200_OK)
@@ -241,8 +241,13 @@ def generate_report(request, pk):
         report_elements.append(meta_table)
         report_elements.append(Spacer(1, 24))
         
-        report_elements.append(Paragraph("Summary Statistics", pdf_styles['Heading2']))
-        report_elements.append(Spacer(1, 8))
+        from reportlab.platypus import KeepTogether
+        from reportlab.graphics.charts.barcharts import VerticalBarChart
+        from reportlab.graphics.shapes import Drawing, Label
+        
+        summary_elements = []
+        summary_elements.append(Paragraph("Summary Statistics", pdf_styles['Heading2']))
+        summary_elements.append(Spacer(1, 8))
         
         stats_data = [
             ['Parameter', 'Mean', 'Min', 'Max'],
@@ -261,11 +266,60 @@ def generate_report(request, pk):
             ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
             ('TOPPADDING', (0, 0), (-1, -1), 10),
         ]))
-        report_elements.append(stats_table)
+        summary_elements.append(stats_table)
+        summary_elements.append(Spacer(1, 12))
+
+        try:
+            d_bar = Drawing(400, 200)
+            data_averages = [
+                float(equipment_record.avg_flowrate),
+                float(equipment_record.avg_pressure),
+                float(equipment_record.avg_temperature)
+            ]
+            
+            bc = VerticalBarChart()
+            bc.x = 50
+            bc.y = 50
+            bc.height = 125
+            bc.width = 300
+            bc.data = [data_averages]
+            bc.strokeColor = colors.white
+            bc.valueAxis.valueMin = 0
+            bc.valueAxis.valueMax = max(data_averages) * 1.2
+            bc.valueAxis.valueStep = max(data_averages) / 5
+            bc.categoryAxis.labels.boxAnchor = 'ne'
+            bc.categoryAxis.labels.dx = 8
+            bc.categoryAxis.labels.dy = -2
+            bc.categoryAxis.labels.angle = 30
+            bc.categoryAxis.categoryNames = ['Flowrate', 'Pressure', 'Temp']
+            
+            bc.bars[0].fillColor = colors.HexColor('#0077b6')
+            
+            d_bar.add(bc)
+            
+            lab = Label()
+            lab.setOrigin(200, 190)
+            lab.boxAnchor = 'ne'
+            lab.dx = 0
+            lab.dy = 0
+            lab.setText('Average Values')
+            d_bar.add(lab)
+
+            chart_table_bar = Table([[d_bar]], colWidths=[400])
+            chart_table_bar.setStyle(TableStyle([
+                ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ]))
+            summary_elements.append(chart_table_bar)
+        except Exception as e:
+            print(f"Bar Chart Error: {e}")
+        
+        report_elements.append(KeepTogether(summary_elements))
         report_elements.append(Spacer(1, 24))
         
-        report_elements.append(Paragraph("Type Distribution", pdf_styles['Heading2']))
-        report_elements.append(Spacer(1, 8))
+        type_elements = []
+        type_elements.append(Paragraph("Type Distribution", pdf_styles['Heading2']))
+        type_elements.append(Spacer(1, 8))
         
         type_data = [['Equipment Type', 'Count']] + [[k, str(v)] for k, v in equipment_record.type_distribution.items()]
         type_table = Table(type_data, colWidths=[200, 100])
@@ -278,11 +332,8 @@ def generate_report(request, pk):
             ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#caf0f8')),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
         ]))
-        report_elements.append(type_table)
-        report_elements.append(Spacer(1, 24))
-
-        report_elements.append(Paragraph("Type Distribution Visualization", pdf_styles['Heading2']))
-        report_elements.append(Spacer(1, 12))
+        type_elements.append(type_table)
+        type_elements.append(Spacer(1, 24))
 
         if equipment_record.type_distribution:
             try:
@@ -330,20 +381,28 @@ def generate_report(request, pk):
                     legend.colorNamePairs = [(chart_colors[i % len(chart_colors)], labels[i]) for i in range(len(data))]
                     d.add(legend)
                     
+                    legend.colorNamePairs = [(chart_colors[i % len(chart_colors)], labels[i]) for i in range(len(data))]
+                    d.add(legend)
+                    
                     chart_table = Table([[d]], colWidths=[400])
                     chart_table.setStyle(TableStyle([
                         ('ALIGN', (0,0), (-1,-1), 'CENTER'),
                         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
                     ]))
-                    report_elements.append(chart_table)
+                    
+                    type_elements.append(chart_table)
+
                 else:
-                    report_elements.append(Paragraph("No numeric data available for chart.", pdf_styles['Normal']))
+                    type_elements.append(Paragraph("Type Distribution Visualization", pdf_styles['Heading2']))
+                    type_elements.append(Spacer(1, 12))
+                    type_elements.append(Paragraph("No numeric data available for chart.", pdf_styles['Normal']))
             except Exception as chart_error:
                 print(f"Chart Generation Error: {str(chart_error)}")
-                report_elements.append(Paragraph(f"Chart Error: {str(chart_error)}", pdf_styles['Italic']))
+                type_elements.append(Paragraph(f"Chart Error: {str(chart_error)}", pdf_styles['Italic']))
         else:
-             report_elements.append(Paragraph("No distribution data available.", pdf_styles['Normal']))
-             
+             type_elements.append(Paragraph("No distribution data available.", pdf_styles['Normal']))
+        
+        report_elements.append(KeepTogether(type_elements))
         report_elements.append(Spacer(1, 24))
         
         report_elements.append(Paragraph("Complete Equipment Data", pdf_styles['Heading2']))

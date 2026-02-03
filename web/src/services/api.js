@@ -55,3 +55,6 @@ export const compareDatasets = (id1, id2, token) =>
     headers: { 'Authorization': `Token ${token}` },
     body: JSON.stringify({ dataset1: id1, dataset2: id2 })
   });
+
+export const checkHealth = () =>
+  api('/health/', { method: 'GET' });
