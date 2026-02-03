@@ -44,8 +44,7 @@ We prioritized **reliability, consistency, and user experience** in our engineer
 In the interest of transparency, the current V1.0 release has the following constraints:
 *   **File Size:** Optimized for CSV files under 10MB to ensure sub-second response times on standard concurrent requests.
 *   **Concurrency:** Large simultaneous uploads are queue-bound by the Gunicorn worker count (default: 4).
-*   **Authentication:** Utilizes local database authentication. OAuth (Google/GitHub) integration is planned for V2.0.
-
+*   **Authentication:** Utilizes local database authentication. 
 ---
 
 ## 🚀 Quick Start
@@ -86,7 +85,6 @@ python main.py
 Detailed documentation for reviewers and developers:
 
 *   **[📂 API Documentation](backend/API_DOCUMENTATION.md)** - Endpoints, Request/Response examples.
-*   **[✅ Submission Checklist](SUBMISSION_CHECKLIST.md)** - Operational status of all features.
 *   **[☁️ Deployment Guide](project_documentation/DEPLOYMENT_GUIDE.md)** - Production setup for Render/Vercel.
 
 ---
@@ -103,7 +101,6 @@ python manage.py test api.tests
 **Key Test Areas:**
 *   `test_validators.py`: Ensures only valid CSVs with correct columns are processed.
 *   `test_views.py`: Verifies API response structures and status codes.
-*   `test_polish.py`: Verifies PDF generation and invalid file handling.
 
 ---
 
@@ -119,4 +116,4 @@ python manage.py test api.tests
 
 ---
 
-*Note: The `web/public/*.zip` file in the repo is an artifact of the build process and is not required for evaluation.*
+*Note: The `web/public/*.zip` file in the repo is an artifact of the build process.*
