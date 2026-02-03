@@ -19,10 +19,6 @@
     <img src="https://img.shields.io/badge/Python-3.9%2B-blue" alt="Python">
     <img src="https://img.shields.io/badge/React-18%2B-61DAFB" alt="React">
 </p>
-<p align="center">
-    <br />
-    <em>🔧 Note: The backend badge uses data from the <code>/health/</code> endpoint. It will turn green when the database is active.</em>
-</p>
 
 <p>
     <a href="https://chemical-equipment-parameter-visual-nu.vercel.app/" target="_blank"><strong>Launch Web Application</strong></a> • 
